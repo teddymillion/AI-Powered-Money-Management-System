@@ -5,7 +5,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Sparkles } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -121,12 +121,15 @@ export default function AssistantPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-4xl mx-auto">
+      <div className="space-y-6 max-w-4xl mx-auto animate-fade-in">
         {/* Page Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Financial Assistant
-          </h1>
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-6 h-6 text-accent" />
+            <h1 className="text-3xl font-bold text-foreground">
+              Financial Assistant
+            </h1>
+          </div>
           <p className="text-muted-foreground">
             Ask me anything about your finances. I&apos;m here to help you make smarter
             financial decisions.
@@ -134,21 +137,24 @@ export default function AssistantPage() {
         </div>
 
         {/* Chat Container */}
-        <Card className="border-border/30 bg-card flex flex-col h-[600px]">
+        <Card className="border-border/30 bg-card/50 backdrop-blur-sm flex flex-col h-[600px] hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500">
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <div
                 key={message.id}
                 className={`flex ${
                   message.role === 'user' ? 'justify-end' : 'justify-start'
-                }`}
+                } animate-slide-up`}
+                style={{
+                  animationDelay: `${index * 50}ms`,
+                }}
               >
                 <div
-                  className={`max-w-sm px-4 py-2 rounded-lg ${
+                  className={`max-w-sm px-4 py-3 rounded-2xl transition-all duration-300 ${
                     message.role === 'user'
-                      ? 'bg-accent text-accent-foreground rounded-br-none'
-                      : 'bg-secondary text-foreground rounded-bl-none'
+                      ? 'bg-accent text-accent-foreground rounded-br-none shadow-lg hover:shadow-xl hover:scale-105'
+                      : 'bg-secondary/70 text-foreground rounded-bl-none border border-border/30 hover:bg-secondary hover:border-border/50'
                   }`}
                 >
                   <p className="text-sm leading-relaxed">{message.content}</p>
@@ -158,8 +164,12 @@ export default function AssistantPage() {
 
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-secondary text-foreground px-4 py-2 rounded-lg rounded-bl-none">
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                <div className="bg-secondary/70 text-foreground px-4 py-3 rounded-2xl rounded-bl-none border border-border/30 flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 rounded-full bg-accent animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 rounded-full bg-accent animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 rounded-full bg-accent animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
                 </div>
               </div>
             )}
@@ -169,8 +179,8 @@ export default function AssistantPage() {
 
           {/* Suggested Prompts (show if no user messages yet) */}
           {messages.length === 1 && !isLoading && (
-            <div className="px-6 py-4 border-t border-border/30">
-              <p className="text-xs text-muted-foreground mb-3">
+            <div className="px-6 py-4 border-t border-border/30 bg-secondary/20 backdrop-blur-sm">
+              <p className="text-xs text-muted-foreground mb-3 font-medium">
                 Try asking:
               </p>
               <div className="flex flex-wrap gap-2">
@@ -178,7 +188,7 @@ export default function AssistantPage() {
                   <button
                     key={prompt}
                     onClick={() => handleSuggestedPrompt(prompt)}
-                    className="px-3 py-1 text-xs bg-secondary hover:bg-secondary/80 text-foreground rounded-full transition-colors"
+                    className="px-4 py-2 text-xs bg-secondary/70 hover:bg-accent/20 hover:border-accent/40 text-foreground rounded-full transition-all duration-300 border border-border/30 hover:border-accent/40 hover:shadow-md group"
                   >
                     {prompt}
                   </button>
@@ -188,19 +198,19 @@ export default function AssistantPage() {
           )}
 
           {/* Input Area */}
-          <div className="border-t border-border/30 p-4">
-            <form onSubmit={handleSendMessage} className="flex gap-2">
+          <div className="border-t border-border/30 p-4 bg-card/70 backdrop-blur-sm">
+            <form onSubmit={handleSendMessage} className="flex gap-2 group">
               <Input
                 placeholder="Ask about your finances..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={isLoading}
-                className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                className="bg-secondary/70 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-accent/50 focus:shadow-lg transition-all group-focus-within:bg-secondary"
               />
               <Button
                 type="submit"
                 disabled={!input.trim() || isLoading}
-                className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
+                className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2 transition-all hover:shadow-lg hover:scale-105 disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
                 <span className="hidden sm:inline">Send</span>

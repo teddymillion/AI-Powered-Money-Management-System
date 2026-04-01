@@ -15,7 +15,7 @@ export function Header() {
             <input
               type="text"
               placeholder="Search transactions..."
-              className="w-full pl-10 pr-4 py-2 bg-secondary text-foreground rounded-lg text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-secondary/70 hover:bg-secondary text-foreground rounded-lg text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:bg-secondary transition-all duration-300 border border-border/30 hover:border-border/50"
             />
           </div>
         </div>
@@ -29,25 +29,25 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="relative hover:bg-secondary"
+              className="relative hover:bg-secondary/70 transition-all duration-300 hover:scale-110 group"
             >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
+              <Bell className="w-5 h-5 group-hover:text-accent transition-colors" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
             </Button>
 
             {/* Settings */}
             <Button
               variant="ghost"
               size="icon"
-              className="hover:bg-secondary"
+              className="hover:bg-secondary/70 transition-all duration-300 hover:scale-110 group"
             >
-              <Settings className="w-5 h-5" />
+              <Settings className="w-5 h-5 group-hover:text-accent group-hover:rotate-90 transition-all duration-300" />
             </Button>
           </div>
 
           {/* Profile Avatar */}
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-            <span className="text-sm font-semibold text-accent-foreground">AK</span>
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center cursor-pointer hover:shadow-lg hover:scale-110 transition-all duration-300 group">
+            <span className="text-sm font-semibold text-accent-foreground group-hover:text-white">AK</span>
           </div>
         </div>
       </div>

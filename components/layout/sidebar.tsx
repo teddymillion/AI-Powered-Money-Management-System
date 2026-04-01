@@ -47,8 +47,8 @@ export function Sidebar() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-2">
-            {NAVIGATION_ITEMS.map((item) => {
+          <nav className="flex-1 space-y-1">
+            {NAVIGATION_ITEMS.map((item, index) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (
@@ -56,14 +56,20 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 group ${
                     isActive
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent'
+                      ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-lg'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-primary'
                   }`}
+                  style={{
+                    animationDelay: `${index * 50}ms`,
+                  }}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
                   <span className="text-sm font-medium">{item.label}</span>
+                  {isActive && (
+                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary-foreground" />
+                  )}
                 </Link>
               );
             })}
@@ -71,9 +77,9 @@ export function Sidebar() {
 
           {/* Footer */}
           <div className="pt-4 border-t border-sidebar-border">
-            <div className="px-4 py-3 rounded-lg bg-sidebar-accent bg-opacity-50">
-              <p className="text-xs text-sidebar-accent-foreground mb-2">Account</p>
-              <p className="text-sm font-medium text-sidebar-foreground">Abebe Kebede</p>
+            <div className="px-4 py-3 rounded-lg bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-all duration-300 group cursor-pointer border border-sidebar-border/50 hover:border-sidebar-primary/30">
+              <p className="text-xs text-sidebar-accent-foreground mb-2 font-semibold uppercase tracking-wider">Account</p>
+              <p className="text-sm font-medium text-sidebar-foreground group-hover:text-sidebar-primary transition-colors">Abebe Kebede</p>
               <p className="text-xs text-sidebar-accent-foreground">abebe@example.com</p>
             </div>
           </div>

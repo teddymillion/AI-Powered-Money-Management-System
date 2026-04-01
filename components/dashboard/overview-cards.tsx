@@ -52,32 +52,41 @@ export function OverviewCards({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map((card) => {
+      {cards.map((card, index) => {
         const Icon = card.icon;
         return (
           <Card
             key={card.label}
-            className="relative overflow-hidden border-border/30 bg-card hover:border-border/50 transition-all duration-300"
+            className="relative overflow-hidden border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500 group cursor-default"
+            style={{
+              animationDelay: `${index * 100}ms`,
+            }}
           >
-            {/* Gradient background effect */}
+            {/* Gradient background effect with enhanced opacity on hover */}
             <div
-              className={`absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-10 bg-gradient-to-br ${card.color}`}
+              className={`absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-10 group-hover:opacity-20 bg-gradient-to-br ${card.color} transition-opacity duration-500`}
             />
+            
+            {/* Secondary gradient for depth */}
+            <div className="absolute -left-6 -bottom-6 w-24 h-24 rounded-full opacity-5 bg-gradient-to-br from-accent/50 to-accent/10" />
 
-            <div className="relative p-6">
-              <div className="flex items-start justify-between mb-4">
-                <span className="text-sm font-medium text-muted-foreground">
+            <div className="relative p-6 space-y-4">
+              <div className="flex items-start justify-between">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   {card.label}
                 </span>
-                <div className={`${card.bgColor} p-2 rounded-lg`}>
+                <div
+                  className={`${card.bgColor} p-2.5 rounded-lg group-hover:scale-110 transition-transform duration-300`}
+                >
                   <Icon className={`w-4 h-4 ${card.textColor}`} />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <p className="text-2xl font-bold text-foreground">
+              <div className="space-y-2">
+                <p className="text-3xl font-bold text-foreground tracking-tight">
                   <CurrencyDisplay amount={card.amount} />
                 </p>
+                <div className="h-0.5 w-8 bg-gradient-to-r from-accent to-accent/30 rounded-full group-hover:w-12 transition-all duration-500" />
               </div>
             </div>
           </Card>

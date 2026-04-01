@@ -19,7 +19,7 @@ import {
   AreaChart,
 } from 'recharts';
 import { MONTHLY_TRENDS } from '@/lib/mock-data';
-import { Calendar } from 'lucide-react';
+import { Calendar, TrendingUp } from 'lucide-react';
 
 type ViewType = 'weekly' | 'monthly' | 'yearly';
 
@@ -54,60 +54,46 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         {/* Page Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Analytics
-          </h1>
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-6 h-6 text-accent" />
+            <h1 className="text-3xl font-bold text-foreground">
+              Analytics
+            </h1>
+          </div>
           <p className="text-muted-foreground">
             Detailed insights into your financial performance
           </p>
         </div>
 
         {/* View Toggle */}
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setViewType('weekly')}
-            variant={viewType === 'weekly' ? 'default' : 'outline'}
-            className={
-              viewType === 'weekly'
-                ? 'bg-accent text-accent-foreground hover:bg-accent/90'
-                : 'border-border hover:bg-secondary'
-            }
-          >
-            Weekly
-          </Button>
-          <Button
-            onClick={() => setViewType('monthly')}
-            variant={viewType === 'monthly' ? 'default' : 'outline'}
-            className={
-              viewType === 'monthly'
-                ? 'bg-accent text-accent-foreground hover:bg-accent/90'
-                : 'border-border hover:bg-secondary'
-            }
-          >
-            Monthly
-          </Button>
-          <Button
-            onClick={() => setViewType('yearly')}
-            variant={viewType === 'yearly' ? 'default' : 'outline'}
-            className={
-              viewType === 'yearly'
-                ? 'bg-accent text-accent-foreground hover:bg-accent/90'
-                : 'border-border hover:bg-secondary'
-            }
-          >
-            Yearly
-          </Button>
+        <div className="flex gap-2 p-1 bg-secondary/30 rounded-lg w-fit">
+          {(['weekly', 'monthly', 'yearly'] as const).map((view) => (
+            <Button
+              key={view}
+              onClick={() => setViewType(view)}
+              className={`capitalize transition-all duration-300 ${
+                viewType === view
+                  ? 'bg-accent text-accent-foreground shadow-lg'
+                  : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              {view}
+            </Button>
+          ))}
         </div>
 
         {/* Income vs Expenses Chart */}
-        <Card className="border-border/30 bg-card">
+        <Card className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500">
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-6">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Income vs Expenses
             </h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Compare your income and spending patterns
+            </p>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={EXTENDED_TRENDS[viewType]}>
                 <defs>
@@ -157,11 +143,14 @@ export default function AnalyticsPage() {
         </Card>
 
         {/* Savings Trend */}
-        <Card className="border-border/30 bg-card">
+        <Card className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500">
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-6">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Savings Trend
             </h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Track your savings growth over time
+            </p>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={EXTENDED_TRENDS[viewType]}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
@@ -194,11 +183,14 @@ export default function AnalyticsPage() {
         </Card>
 
         {/* Category Breakdown */}
-        <Card className="border-border/30 bg-card">
+        <Card className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500">
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-6">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Category Breakdown
             </h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              See where your money is going
+            </p>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={CATEGORY_BREAKDOWN}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
@@ -245,16 +237,24 @@ export default function AnalyticsPage() {
               trend: '+3.5%',
             },
           ].map((stat, index) => (
-            <Card key={index} className="border-border/30 bg-card">
-              <div className="p-6">
-                <p className="text-sm text-muted-foreground mb-2">
+            <Card
+              key={index}
+              className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500 group cursor-pointer"
+              style={{
+                animationDelay: `${index * 100}ms`,
+              }}
+            >
+              <div className="p-6 space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider group-hover:text-accent transition-colors">
                   {stat.label}
                 </p>
-                <p className="text-2xl font-bold text-foreground mb-2">
+                <p className="text-3xl font-bold text-foreground group-hover:text-accent transition-colors">
                   {stat.value}
                 </p>
                 {stat.trend && (
-                  <p className="text-xs text-green-400">{stat.trend} from last month</p>
+                  <p className="text-xs text-green-400 font-medium">
+                    {stat.trend} from last month
+                  </p>
                 )}
                 {stat.subtext && (
                   <p className="text-xs text-muted-foreground">{stat.subtext}</p>
