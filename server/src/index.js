@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { connectDB } from './db.js';
 import authRoutes    from './routes/auth.js';
@@ -15,6 +16,10 @@ import { requireAuth } from './middleware/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Ensure uploads directory exists (needed on Render ephemeral filesystem)
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
 const app = express();
 
 app.use(cors({
@@ -23,10 +28,11 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Serve uploaded avatars — path relative to project root (server/)
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve uploaded avatars
+app.use('/uploads', express.static(uploadsDir));
 
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+// Health check — used by Render and uptime pingers to keep server awake
+app.get('/health', (req, res) => res.json({ status: 'ok', ts: Date.now() }));
 
 app.use('/auth',         authRoutes);
 app.use('/transactions', requireAuth, transactionRoutes);
@@ -40,7 +46,7 @@ const port = process.env.PORT || 4000;
 
 connectDB(process.env.MONGODB_URI)
   .then(() => {
-    app.listen(port, () => console.log(`API server running on port ${port}`));
+    app.listen(port, '0.0.0.0', () => console.log(`API server running on port ${port}`));
   })
   .catch((error) => {
     console.error('Failed to connect to MongoDB', error);
