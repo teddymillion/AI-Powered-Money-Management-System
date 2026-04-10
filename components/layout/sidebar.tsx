@@ -5,15 +5,16 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
   LayoutDashboard, Sparkles, Target, BarChart3,
-  LogOut, Menu, X, Zap, ChevronRight,
+  LogOut, Menu, X, ChevronRight, UserCircle,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
 const NAV = [
-  { href: '/',           label: 'Dashboard',    icon: LayoutDashboard, badge: null },
+  { href: '/dashboard',  label: 'Dashboard',    icon: LayoutDashboard, badge: null },
   { href: '/assistant',  label: 'AI Assistant', icon: Sparkles,        badge: 'AI' },
   { href: '/budget',     label: 'Budget',       icon: Target,          badge: null },
   { href: '/analytics',  label: 'Analytics',    icon: BarChart3,       badge: null },
+  { href: '/profile',    label: 'Profile',      icon: UserCircle,      badge: null },
 ];
 
 export function Sidebar() {
@@ -33,11 +34,15 @@ export function Sidebar() {
       {/* Logo */}
       <div className="px-6 py-5 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-lg shadow-accent/30">
-            <Zap className="w-4 h-4 text-accent-foreground" />
+          <div className="w-10 h-10 rounded-xl bg-white/90 dark:bg-white/10 flex items-center justify-center border border-sidebar-border shadow-sm shadow-black/10 overflow-hidden">
+            <img
+              src="/favicon.png"
+              alt="ስሙኒ ዋሌት"
+              className="w-8 h-8"
+            />
           </div>
           <div>
-            <p className="text-base font-bold text-sidebar-foreground tracking-tight">FinFlow</p>
+            <p className="text-base font-bold text-sidebar-foreground tracking-tight">ስሙኒ ዋሌት</p>
             <p className="text-[10px] text-sidebar-accent-foreground font-medium uppercase tracking-widest">AI Finance</p>
           </div>
         </div>

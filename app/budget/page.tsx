@@ -1,199 +1,190 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { BUDGET_GOALS } from '@/lib/mock-data';
+import { NewGoalModal } from '@/components/budget/new-goal-modal';
 import { api, APIError } from '@/lib/api';
-import { Plus, Target, TrendingUp } from 'lucide-react';
+import { Target, TrendingUp, Trash2 } from 'lucide-react';
 
-interface Summary {
-  income: number;
-  expenses: number;
-  savings: number;
+interface Goal { _id: string; name: string; target: number; current: number; icon: string; deadline?: string; }
+interface Summary { income: number; expenses: number; savings: number; }
+
+function SkeletonGoal() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+      <div className="flex items-start justify-between">
+        <div className="space-y-2"><div className="skeleton h-4 w-28 rounded" /><div className="skeleton h-3 w-20 rounded" /></div>
+        <div className="skeleton w-10 h-10 rounded-xl" />
+      </div>
+      <div className="skeleton h-2.5 w-full rounded-full" />
+      <div className="skeleton h-3 w-24 rounded" />
+    </div>
+  );
 }
 
 export default function BudgetPage() {
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [goals, setGoals]       = useState<Goal[]>([]);
+  const [summary, setSummary]   = useState<Summary | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
-  useEffect(() => {
-    api.getSummary()
-      .then((data) => setSummary(data as Summary))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [g, s] = await Promise.all([api.getGoals(), api.getSummary()]);
+      setGoals(g as Goal[]);
+      setSummary(s as Summary);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
   }, []);
 
-  const income = summary?.income ?? 0;
-  const needs = summary?.expenses ?? 0;
-  const savings = summary?.savings ?? 0;
-  // wants = income - needs - savings (floor at 0)
-  const wants = Math.max(0, income - needs - savings);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this goal?')) return;
+    setDeleting(id);
+    try { await api.deleteGoal(id); setGoals(prev => prev.filter(g => g._id !== id)); }
+    catch { /* silent */ }
+    finally { setDeleting(null); }
+  };
+
+  const income    = summary?.income   ?? 0;
+  const needs     = summary?.expenses ?? 0;
+  const savings   = summary?.savings  ?? 0;
+  const wants     = Math.max(0, income - needs - savings);
   const needsPct  = income > 0 ? Math.round((needs   / income) * 100) : 0;
   const wantsPct  = income > 0 ? Math.round((wants   / income) * 100) : 0;
   const savingsPct = income > 0 ? Math.round((savings / income) * 100) : 0;
-
-  const currentMonth = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const month     = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-up">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Target className="w-6 h-6 text-accent" />
-              <h1 className="text-3xl font-bold text-foreground">Budget & Goals</h1>
+            <div className="flex items-center gap-2 mb-1">
+              <Target className="w-5 h-5 text-accent" />
+              <h1 className="text-2xl font-bold text-foreground">Budget & Goals</h1>
             </div>
-            <p className="text-muted-foreground">Track your savings goals and financial targets</p>
+            <p className="text-sm text-muted-foreground">Track your savings goals and financial targets</p>
           </div>
-          <Button
-            className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground hover:shadow-lg transition-all hover:scale-105"
-            onClick={() => alert('Goal creation coming soon — add transactions first to track progress!')}
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">New Goal</span>
-          </Button>
+          <NewGoalModal onCreated={fetchAll} />
         </div>
 
-        {/* Goals Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {BUDGET_GOALS.map((goal, index) => {
-            const percentage = Math.round((goal.current / goal.target) * 100);
-            const remaining = goal.target - goal.current;
-            return (
-              <Card
-                key={goal.id}
-                className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500 group cursor-pointer"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="p-6 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-foreground mb-1 group-hover:text-accent transition-colors">
-                        {goal.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Goal: <CurrencyDisplay amount={goal.target} />
-                      </p>
-                    </div>
-                    <span className="text-3xl flex-shrink-0 group-hover:scale-125 transition-transform duration-300">
-                      {goal.icon}
-                    </span>
-                  </div>
+        {/* Goals grid */}
+        <div>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Your Goals</h2>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[0,1,2,3].map(i => <SkeletonGoal key={i} />)}
+            </div>
+          ) : goals.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+                <Target className="w-7 h-7 text-accent" />
+              </div>
+              <p className="text-sm font-semibold text-foreground mb-1">No goals yet</p>
+              <p className="text-xs text-muted-foreground">Click "New Goal" to create your first savings goal.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {goals.map((goal) => {
+                const pct       = goal.target > 0 ? Math.min(100, Math.round((goal.current / goal.target) * 100)) : 0;
+                const remaining = goal.target - goal.current;
+                const daysLeft  = goal.deadline ? Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / 86400000) : null;
+                return (
+                  <div key={goal._id} className="group rounded-2xl border border-border bg-card p-5 card-hover relative overflow-hidden">
+                    <button
+                      onClick={() => handleDelete(goal._id)}
+                      disabled={deleting === goal._id}
+                      className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-secondary opacity-0 group-hover:opacity-100 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
 
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground font-medium">Progress</span>
-                        <span className="font-bold text-accent bg-accent/10 px-2 py-1 rounded-full">
-                          {percentage}%
-                        </span>
+                    <div className="flex items-start gap-3 mb-4">
+                      <span className="text-3xl">{goal.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-foreground truncate">{goal.name}</h3>
+                        <p className="text-xs text-muted-foreground">Target: <CurrencyDisplay amount={goal.target} /></p>
                       </div>
-                      <Progress value={percentage} className="h-2.5 bg-secondary rounded-full overflow-hidden" />
                     </div>
-                    <div className="space-y-1 pt-2 border-t border-border/30">
-                      <p className="text-sm font-medium text-foreground">
+
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span className="font-bold text-accent">{pct}%</span>
+                      </div>
+                      <Progress value={pct} className="h-2 bg-secondary" />
+                    </div>
+
+                    <div className="space-y-1 pt-3 border-t border-border/50">
+                      <p className="text-xs font-medium text-foreground">
                         <CurrencyDisplay amount={goal.current} /> of <CurrencyDisplay amount={goal.target} />
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        <CurrencyDisplay amount={remaining} /> remaining
-                      </p>
+                      <p className="text-xs text-muted-foreground"><CurrencyDisplay amount={remaining} /> remaining</p>
+                      {daysLeft !== null && (
+                        <p className={`text-xs font-medium ${daysLeft < 30 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                          {daysLeft > 0 ? `${daysLeft} days left` : 'Deadline passed'}
+                        </p>
+                      )}
                     </div>
                   </div>
-                </div>
-              </Card>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Monthly Budget — live data */}
-        <Card className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 rounded-lg bg-accent/10">
-                <Target className="w-5 h-5 text-accent" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Monthly Budget</h3>
-                <p className="text-sm text-muted-foreground">{currentMonth}</p>
-              </div>
-            </div>
-
-            {loading ? (
-              <p className="text-sm text-muted-foreground">Loading budget data...</p>
-            ) : (
-              <div className="space-y-4">
-                {/* Needs */}
-                <div className="p-4 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all duration-300 cursor-pointer">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm font-semibold text-foreground">
-                      Needs — {needsPct}% of income
-                    </span>
-                    <span className="text-sm font-bold text-green-600 dark:text-green-400 bg-green-500/10 px-3 py-1 rounded-full">
-                      <CurrencyDisplay amount={needs} />
-                    </span>
-                  </div>
-                  <Progress value={Math.min(needsPct, 100)} className="h-3 bg-secondary rounded-full" />
-                  <p className="text-xs text-muted-foreground mt-2">Rent, utilities, groceries, transport</p>
-                </div>
-
-                {/* Wants */}
-                <div className="p-4 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all duration-300 cursor-pointer">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm font-semibold text-foreground">
-                      Wants — {wantsPct}% of income
-                    </span>
-                    <span className="text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full">
-                      <CurrencyDisplay amount={wants} />
-                    </span>
-                  </div>
-                  <Progress value={Math.min(wantsPct, 100)} className="h-3 bg-secondary rounded-full" />
-                  <p className="text-xs text-muted-foreground mt-2">Entertainment, dining out, shopping</p>
-                </div>
-
-                {/* Savings */}
-                <div className="p-4 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all duration-300 cursor-pointer">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm font-semibold text-foreground">
-                      Savings — {savingsPct}% of income
-                    </span>
-                    <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full">
-                      <CurrencyDisplay amount={savings} />
-                    </span>
-                  </div>
-                  <Progress value={Math.min(savingsPct, 100)} className="h-3 bg-secondary rounded-full" />
-                  <p className="text-xs text-muted-foreground mt-2">Emergency fund, goals, investments</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </Card>
-
-        {/* Pro Tip */}
-        <Card className="border-border/30 bg-gradient-to-br from-accent/5 to-secondary/30 border-accent/20 hover:border-accent/40 transition-all duration-500 hover:shadow-lg group">
-          <div className="p-6 flex items-start gap-4">
-            <div className="p-3 rounded-lg bg-accent/20 flex-shrink-0 group-hover:scale-110 transition-all duration-300">
-              <TrendingUp className="w-6 h-6 text-accent" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-semibold text-foreground mb-2 group-hover:text-accent transition-colors">
-                Pro Tip — 50/30/20 Rule
-              </h4>
-              <p className="text-sm text-muted-foreground group-hover:text-foreground/80 transition-colors">
-                Aim for 50% on needs, 30% on wants, and 20% on savings. Your current split is{' '}
-                <strong className="text-foreground">{needsPct}% / {wantsPct}% / {savingsPct}%</strong>.{' '}
-                {savingsPct >= 20
-                  ? '🎉 Great job on savings!'
-                  : 'Try to increase your savings rate to at least 20%.'}
-              </p>
+        {/* Monthly budget breakdown */}
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2.5 rounded-xl bg-accent/10"><Target className="w-4 h-4 text-accent" /></div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Monthly Budget — 50/30/20</h3>
+              <p className="text-xs text-muted-foreground">{month}</p>
             </div>
           </div>
-        </Card>
+          {loading ? (
+            <div className="space-y-3">{[0,1,2].map(i => <div key={i} className="skeleton h-16 rounded-xl" />)}</div>
+          ) : (
+            <div className="space-y-3">
+              {[
+                { label: 'Needs', pct: needsPct,   amount: needs,   color: 'bg-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', desc: 'Rent, utilities, groceries, transport' },
+                { label: 'Wants', pct: wantsPct,   amount: wants,   color: 'bg-amber-500',   textColor: 'text-amber-600 dark:text-amber-400',   desc: 'Entertainment, dining out, shopping' },
+                { label: 'Savings', pct: savingsPct, amount: savings, color: 'bg-blue-500',    textColor: 'text-blue-600 dark:text-blue-400',    desc: 'Emergency fund, goals, investments' },
+              ].map(({ label, pct, amount, color, textColor, desc }) => (
+                <div key={label} className="p-4 rounded-xl bg-secondary/40 hover:bg-secondary/60 transition-colors">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-semibold text-foreground">{label} — {pct}%</span>
+                    <span className={`text-sm font-bold ${textColor}`}><CurrencyDisplay amount={amount} /></span>
+                  </div>
+                  <div className="h-2 bg-secondary rounded-full overflow-hidden mb-1.5">
+                    <div className={`h-full rounded-full ${color} transition-all duration-700`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{desc}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pro tip */}
+        <div className="rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/5 to-secondary/30 p-6 flex items-start gap-4">
+          <div className="p-2.5 rounded-xl bg-accent/15 flex-shrink-0">
+            <TrendingUp className="w-5 h-5 text-accent" />
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-foreground mb-1">Pro Tip — 50/30/20 Rule</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Aim for 50% needs, 30% wants, 20% savings. Your split: <strong className="text-foreground">{needsPct}% / {wantsPct}% / {savingsPct}%</strong>.{' '}
+              {savingsPct >= 20 ? '🎉 Excellent savings rate!' : 'Try to increase savings to at least 20%.'}
+            </p>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -2,30 +2,32 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
-interface User {
+export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  avatar?: string | null;
 }
 
 interface AuthContextValue {
-  user: User | null;
+  user: AuthUser | null;
   token: string | null;
-  login: (token: string, user: User) => void;
+  login: (token: string, user: AuthUser) => void;
   logout: () => void;
+  updateUser: (updates: Partial<AuthUser>) => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser]       = useState<AuthUser | null>(null);
+  const [token, setToken]     = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('auth_user');
+    const storedUser  = localStorage.getItem('auth_user');
     if (storedToken && storedUser) {
       try {
         setToken(storedToken);
@@ -38,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = useCallback((newToken: string, newUser: User) => {
+  const login = useCallback((newToken: string, newUser: AuthUser) => {
     localStorage.setItem('auth_token', newToken);
     localStorage.setItem('auth_user', JSON.stringify(newUser));
     setToken(newToken);
@@ -52,8 +54,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((updates: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updates };
+      localStorage.setItem('auth_user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

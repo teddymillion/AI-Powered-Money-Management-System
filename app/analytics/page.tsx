@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   LineChart,
@@ -74,17 +76,12 @@ export default function AnalyticsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
-        {/* Page Header */}
         <div>
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-6 h-6 text-accent" />
-            <h1 className="text-3xl font-bold text-foreground">
-              Analytics
-            </h1>
+            <h1 className="text-3xl font-bold text-foreground">Analytics</h1>
           </div>
-          <p className="text-muted-foreground">
-            Detailed insights into your financial performance
-          </p>
+          <p className="text-muted-foreground">Detailed insights into your financial performance</p>
         </div>
 
         {error && (
@@ -93,8 +90,7 @@ export default function AnalyticsPage() {
           </div>
         )}
 
-        {/* View Toggle */}
-        <div className="flex gap-2 p-1 bg-secondary/30 rounded-lg w-fit">
+        <div className="flex gap-2 p-1 bg-secondary/30 rounded-xl w-fit">
           {(['weekly', 'monthly', 'yearly'] as const).map((view) => (
             <Button
               key={view}
@@ -110,152 +106,127 @@ export default function AnalyticsPage() {
           ))}
         </div>
 
-        {/* Income vs Expenses Chart */}
-        <Card className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500">
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Income vs Expenses
-            </h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Compare your income and spending patterns
-            </p>
-            {loading ? (
-              <div className="text-sm text-muted-foreground">Loading trends...</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={trendData}>
-                  <defs>
-                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-                  <XAxis
-                    dataKey="period"
-                    stroke="rgba(148, 163, 184, 0.5)"
-                    style={{ fontSize: '12px' }}
-                  />
-                  <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(15, 17, 23, 0.9)',
-                      border: '1px solid rgba(148, 163, 184, 0.3)',
-                      borderRadius: '8px',
-                      color: '#f5f5f5',
-                    }}
-                    formatter={(value: number) => `ETB ${value.toLocaleString()}`}
-                  />
-                  <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="income"
-                    stroke="#10b981"
-                    fillOpacity={1}
-                    fill="url(#colorIncome)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="expenses"
-                    stroke="#ef4444"
-                    fillOpacity={1}
-                    fill="url(#colorExpenses)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </Card>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+          <Card className="border-border/70 bg-card/70 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Income vs Expenses</CardTitle>
+                  <p className="text-sm text-muted-foreground">Compare your income and spending patterns</p>
+                </div>
+                <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">Trends</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-sm text-muted-foreground">Loading trends...</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={trendData}>
+                    <defs>
+                      <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
+                    <XAxis dataKey="period" stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
+                    <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(15, 17, 23, 0.9)',
+                        border: '1px solid rgba(148, 163, 184, 0.3)',
+                        borderRadius: '8px',
+                        color: '#f5f5f5',
+                      }}
+                      formatter={(value: number) => `ETB ${value.toLocaleString()}`}
+                    />
+                    <Legend />
+                    <Area type="monotone" dataKey="income" stroke="#10b981" fillOpacity={1} fill="url(#colorIncome)" />
+                    <Area type="monotone" dataKey="expenses" stroke="#ef4444" fillOpacity={1} fill="url(#colorExpenses)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        {/* Savings Trend */}
-        <Card className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500">
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Savings Trend
-            </h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Track your savings growth over time
-            </p>
-            {loading ? (
-              <div className="text-sm text-muted-foreground">Loading trends...</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-                  <XAxis
-                    dataKey="period"
-                    stroke="rgba(148, 163, 184, 0.5)"
-                    style={{ fontSize: '12px' }}
-                  />
-                  <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(15, 17, 23, 0.9)',
-                      border: '1px solid rgba(148, 163, 184, 0.3)',
-                      borderRadius: '8px',
-                      color: '#f5f5f5',
-                    }}
-                    formatter={(value: number) => `ETB ${value.toLocaleString()}`}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="savings"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                    dot={{ fill: '#10b981', r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="border-border/70 bg-card/70 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Savings Trend</CardTitle>
+                  <p className="text-sm text-muted-foreground">Track your savings growth</p>
+                </div>
+                <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">Momentum</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-sm text-muted-foreground">Loading trends...</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={trendData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
+                    <XAxis dataKey="period" stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
+                    <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(15, 17, 23, 0.9)',
+                        border: '1px solid rgba(148, 163, 184, 0.3)',
+                        borderRadius: '8px',
+                        color: '#f5f5f5',
+                      }}
+                      formatter={(value: number) => `ETB ${value.toLocaleString()}`}
+                    />
+                    <Line type="monotone" dataKey="savings" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', r: 4 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Category Breakdown */}
-        <Card className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500">
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Category Breakdown
-            </h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              See where your money is going
-            </p>
-            {loading ? (
-              <div className="text-sm text-muted-foreground">Loading categories...</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={categoryData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-                  <XAxis
-                    dataKey="category"
-                    stroke="rgba(148, 163, 184, 0.5)"
-                    style={{ fontSize: '12px' }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                  />
-                  <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(15, 17, 23, 0.9)',
-                      border: '1px solid rgba(148, 163, 184, 0.3)',
-                      borderRadius: '8px',
-                      color: '#f5f5f5',
-                    }}
-                    formatter={(value: number) => `ETB ${value.toLocaleString()}`}
-                  />
-                  <Bar dataKey="amount" fill="#10b981" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </Card>
+          <Card className="border-border/70 bg-card/70 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Category Breakdown</CardTitle>
+                  <p className="text-sm text-muted-foreground">Where your money goes</p>
+                </div>
+                <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">Distribution</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-sm text-muted-foreground">Loading categories...</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={categoryData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
+                    <XAxis dataKey="category" stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} angle={-45} textAnchor="end" height={80} />
+                    <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(15, 17, 23, 0.9)',
+                        border: '1px solid rgba(148, 163, 184, 0.3)',
+                        borderRadius: '8px',
+                        color: '#f5f5f5',
+                      }}
+                      formatter={(value: number) => `ETB ${value.toLocaleString()}`}
+                    />
+                    <Bar dataKey="amount" fill="#10b981" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
             {
@@ -274,30 +245,26 @@ export default function AnalyticsPage() {
               trend: 'Tracking',
             },
           ].map((stat, index) => (
-            <Card
-              key={index}
-              className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500 group cursor-pointer"
-              style={{
-                animationDelay: `${index * 100}ms`,
-              }}
-            >
-              <div className="p-6 space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider group-hover:text-accent transition-colors">
-                  {stat.label}
-                </p>
-                <p className="text-3xl font-bold text-foreground group-hover:text-accent transition-colors">
-                  {stat.value}
-                </p>
-                {stat.trend && (
-                  <p className="text-xs text-green-400 font-medium">
-                    {stat.trend} from this month
+            <motion.div key={index} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+              <Card className="border-border/70 bg-card/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <CardContent className="py-6 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {stat.label}
                   </p>
-                )}
-                {stat.subtext && (
-                  <p className="text-xs text-muted-foreground">{stat.subtext}</p>
-                )}
-              </div>
-            </Card>
+                  <p className="text-3xl font-bold text-foreground">
+                    {stat.value}
+                  </p>
+                  {stat.trend && (
+                    <p className="text-xs text-emerald-400 font-medium">
+                      {stat.trend} from this month
+                    </p>
+                  )}
+                  {stat.subtext && (
+                    <p className="text-xs text-muted-foreground">{stat.subtext}</p>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
         </div>
       </div>

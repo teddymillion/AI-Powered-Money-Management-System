@@ -8,7 +8,7 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'FinFlow - Personal Finance AI',
+  title: 'ስሙኒ ዋሌት - Personal Finance AI',
   description: 'Premium personal finance management with AI insights for Ethiopia',
   generator: 'v0.app',
   viewport: {
@@ -17,10 +17,7 @@ export const metadata: Metadata = {
     maximumScale: 1,
   },
   icons: {
-    icon: [
-      { url: '/favicon.png', type: 'image/png' },
-      { url: '/favicon.ico', type: 'image/x-icon' },
-    ],
+    icon: '/favicon.png',
   },
 }
 
