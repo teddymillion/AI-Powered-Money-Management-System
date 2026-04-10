@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: simuni-wallet-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: MAIL_USER
+        sync: false
+      - key: MAIL_PASS
+        sync: false
+    healthCheckPath: /health
