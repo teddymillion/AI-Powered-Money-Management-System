@@ -5,6 +5,7 @@ services:
     rootDir: server
     buildCommand: npm install
     startCommand: node src/index.js
+    nodeVersion: 18.20.4
     envVars:
       - key: NODE_ENV
         value: production
@@ -23,3 +24,4 @@ services:
       - key: MAIL_PASS
         sync: false
     healthCheckPath: /health
+    autoDeploy: true
