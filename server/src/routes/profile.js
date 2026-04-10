@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import path from 'path';
 import { User } from '../models/User.js';
+import { registerClient, removeClient } from '../utils/notificationBus.js';
 
 const router = Router();
 
@@ -127,24 +129,12 @@ router.patch('/notifications/read-all', async (req, res) => {
 });
 
 // ── Real-time notifications via SSE ──────────────────────
-// Map of userId -> res (SSE response)
-const sseClients = new Map();
-
-export function pushNotification(userId, notification) {
-  const client = sseClients.get(String(userId));
-  if (client) {
-    client.write(`data: ${JSON.stringify(notification)}\n\n`);
-  }
-}
-
 router.get('/notifications/stream', async (req, res) => {
-  // EventSource can't send headers — accept token via query param
   const token = req.query.token;
   if (!token) return res.status(401).json({ error: 'Missing token.' });
 
   let userId;
   try {
-    const { default: jwt } = await import('jsonwebtoken');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     userId = String(decoded.sub);
   } catch {
@@ -154,16 +144,21 @@ router.get('/notifications/stream', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
-  sseClients.set(userId, res);
+  // Send an immediate ping so the client knows the connection is live
+  res.write(': connected\n\n');
 
-  // Heartbeat every 25s to keep connection alive through proxies
-  const heartbeat = setInterval(() => res.write(': heartbeat\n\n'), 25000);
+  registerClient(userId, res);
+
+  const heartbeat = setInterval(() => {
+    try { res.write(': heartbeat\n\n'); } catch { clearInterval(heartbeat); }
+  }, 25000);
 
   req.on('close', () => {
     clearInterval(heartbeat);
-    sseClients.delete(userId);
+    removeClient(userId);
   });
 });
 

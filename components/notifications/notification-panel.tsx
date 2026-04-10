@@ -26,9 +26,10 @@ export function NotificationPanel() {
   const [open, setOpen]                   = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading]             = useState(false);
-  const [newCount, setNewCount]           = useState(0); // tracks SSE-pushed unseen
+  const [newCount, setNewCount]           = useState(0);
   const panelRef                          = useRef<HTMLDivElement>(null);
-  const eventSourceRef                    = useRef<EventSource | null>(null);
+  const retryRef                          = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const esRef                             = useRef<EventSource | null>(null);
 
   const unread = notifications.filter(n => !n.read).length;
 
@@ -44,26 +45,45 @@ export function NotificationPanel() {
 
   useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
-  // ── SSE real-time stream ───────────────────────────────────
+  // ── SSE real-time stream with auto-reconnect ───────────────
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     if (!token) return;
 
-    // EventSource doesn't support custom headers — pass token as query param
-    const es = new EventSource(`${API_BASE}/profile/notifications/stream?token=${token}`);
-    eventSourceRef.current = es;
+    let destroyed = false;
 
-    es.onmessage = (e) => {
-      try {
-        const notif: Notification = JSON.parse(e.data);
-        setNotifications(prev => [notif, ...prev.filter(n => n.id !== notif.id)]);
-        setNewCount(c => c + 1);
-      } catch { /* ignore malformed */ }
+    const connect = () => {
+      if (destroyed) return;
+
+      const es = new EventSource(`${API_BASE}/profile/notifications/stream?token=${token}`);
+      esRef.current = es;
+
+      es.onmessage = (e) => {
+        // ignore heartbeat comments (they come as empty data)
+        if (!e.data || e.data.trim() === '') return;
+        try {
+          const notif: Notification = JSON.parse(e.data);
+          setNotifications(prev => [notif, ...prev.filter(n => n.id !== notif.id)]);
+          setNewCount(c => c + 1);
+        } catch { /* ignore malformed */ }
+      };
+
+      es.onerror = () => {
+        es.close();
+        esRef.current = null;
+        if (!destroyed) {
+          retryRef.current = setTimeout(connect, 4000);
+        }
+      };
     };
 
-    es.onerror = () => { es.close(); };
+    connect();
 
-    return () => { es.close(); };
+    return () => {
+      destroyed = true;
+      esRef.current?.close();
+      if (retryRef.current) clearTimeout(retryRef.current);
+    };
   }, []);
 
   // Reset new badge when panel opens
@@ -106,7 +126,7 @@ export function NotificationPanel() {
       >
         <Bell className="w-4 h-4" />
         {badgeCount > 0 && (
-          <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-accent-foreground text-[9px] font-bold flex items-center justify-center ${newCount > 0 ? 'bg-red-500 animate-pulse' : 'bg-accent'}`}>
+          <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[9px] font-bold flex items-center justify-center ${newCount > 0 ? 'bg-red-500 animate-pulse' : 'bg-accent'}`}>
             {badgeCount > 9 ? '9+' : badgeCount}
           </span>
         )}
