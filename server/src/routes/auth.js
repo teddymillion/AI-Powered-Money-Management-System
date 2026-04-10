@@ -17,29 +17,27 @@ async function sendNotification(userId, notif) {
   pushNotification(userId, notif);
 }
 
-// ── Nodemailer transporter (Gmail) ─────────────────────────
-function createTransporter() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-}
-
 async function sendEmail({ to, subject, html }) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.log(`\n📧 [EMAIL NOT CONFIGURED] TO: ${to}\nSUBJECT: ${subject}\n${html}\n`);
+  if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+    console.log(`\n📧 [EMAIL NOT CONFIGURED] TO: ${to}\nSUBJECT: ${subject}\n`);
     return;
   }
-  const transporter = createTransporter();
-  await transporter.sendMail({
-    from: `"ስሙኒ ዋሌት" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    html,
-  });
+  // Wrap in a 10s timeout so a bad SMTP config never hangs the request
+  await Promise.race([
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 10000)),
+    (async () => {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+      });
+      await transporter.sendMail({
+        from: `"ስሙኒ ዋሌት" <${process.env.MAIL_USER}>`,
+        to,
+        subject,
+        html,
+      });
+    })(),
+  ]);
 }
 
 function signToken(user) {
@@ -79,12 +77,40 @@ router.post('/register', async (req, res) => {
       read: false,
       createdAt: new Date(),
     };
-    const user = await User.create({ name, email, passwordHash, notifications: [welcomeNotif] });
-    const token = signToken(user);
+
+    // Generate OTP for email verification on first signup
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    const user = await User.create({ name, email, passwordHash, otp, otpExpiry, notifications: [welcomeNotif] });
+
+    // Send OTP email — non-blocking, errors are caught silently
+    sendEmail({
+      to: email,
+      subject: 'ስሙኒ ዋሌት — Verify Your Email',
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0f1117;border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,#10b981,#059669);padding:32px;text-align:center">
+            <h1 style="color:#fff;margin:0;font-size:24px;font-weight:700">ስሙኒ ዋሌት</h1>
+            <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px">AI-Powered Money Management</p>
+          </div>
+          <div style="padding:32px">
+            <h2 style="color:#f5f5f5;font-size:20px;margin:0 0 8px">Verify Your Email</h2>
+            <p style="color:#94a3b8;font-size:14px;margin:0 0 24px">Welcome ${name.split(' ')[0]}! Use this code to verify your account. Expires in <strong style="color:#f5f5f5">10 minutes</strong>.</p>
+            <div style="background:#1a1d27;border:2px solid #10b981;border-radius:12px;padding:24px;text-align:center;margin:0 0 24px">
+              <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#10b981">${otp}</span>
+            </div>
+          </div>
+          <div style="background:#0a0c12;padding:16px;text-align:center">
+            <p style="color:#475569;font-size:11px;margin:0">&copy; ${new Date().getFullYear()} ስሙኒ ዋሌት &mdash; Built by Teddy</p>
+          </div>
+        </div>
+      `,
+    }).catch(err => console.error('Register email error:', err.message));
 
     return res.status(201).json({
-      token,
-      user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar },
+      message: 'Account created. Check your email for the verification code.',
+      email: user.email,
     });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to register user.' });
@@ -99,10 +125,10 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required.' });
     }
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ error: 'Invalid credentials.' });
+    if (!user) return res.status(401).json({ error: 'No account found with this email. Please register first.' });
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isValid) return res.status(401).json({ error: 'Invalid credentials.' });
+    if (!isValid) return res.status(401).json({ error: 'Incorrect password. Please try again.' });
 
     const token = signToken(user);
     return res.json({
