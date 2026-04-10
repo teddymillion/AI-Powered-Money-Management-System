@@ -7,12 +7,14 @@ import { useAuth } from '@/lib/auth-context';
 import { api, APIError } from '@/lib/api';
 import { FinanceIllustration } from '@/components/finance-illustration';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
 type Screen = 'login' | 'register' | 'otp' | 'forgot' | 'forgot-sent';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [screen, setScreen] = useState<Screen>('login');
+  const [screen, setScreen]       = useState<Screen>('login');
   const [name, setName]           = useState('');
   const [email, setEmail]         = useState('');
   const [password, setPassword]   = useState('');
@@ -38,36 +40,46 @@ export default function LoginPage() {
 
   const reset = () => { setError(null); setSuccess(null); };
 
-  // ── Register ──
+  // ── Direct login (password only, no OTP) ──────────────────
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault(); reset();
+    setLoading(true);
+    try {
+      // Use the existing /auth/login endpoint directly
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed.');
+      login(data.token, data.user);
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.message);
+    } finally { setLoading(false); }
+  };
+
+  // ── Register → then OTP verify ────────────────────────────
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault(); reset();
     if (password !== confirm) { setError('Passwords do not match.'); return; }
     setLoading(true);
     try {
-      const data = await api.register(name, email, password, confirm) as any;
-      login(data.token, data.user);
-      router.push('/dashboard');
-    } catch (err) {
-      setError(err instanceof APIError ? err.message : 'Registration failed.');
-    } finally { setLoading(false); }
-  };
-
-  // ── Login step 1: request OTP ──
-  const handleLoginRequestOTP = async (e: React.FormEvent) => {
-    e.preventDefault(); reset();
-    setLoading(true);
-    try {
+      // Register creates the account and sends OTP to email
+      await api.register(name, email, password, confirm);
+      // Now request OTP for first-time verification
       await api.requestOTP(email, password);
       setScreen('otp');
       setResendTimer(60);
       setOtp(['', '', '', '', '', '']);
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch (err) {
-      setError(err instanceof APIError ? err.message : 'Login failed.');
+      setError(err instanceof APIError ? err.message : 'Registration failed.');
     } finally { setLoading(false); }
   };
 
-  // ── Login step 2: verify OTP ──
+  // ── Verify OTP (only after register) ──────────────────────
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault(); reset();
     const code = otp.join('');
@@ -91,7 +103,7 @@ export default function LoginPage() {
     } catch { setError('Failed to resend OTP.'); }
   };
 
-  // ── OTP input handling ──
+  // ── OTP input: type one digit at a time ───────────────────
   const handleOtpChange = (i: number, val: string) => {
     if (!/^\d*$/.test(val)) return;
     const next = [...otp];
@@ -99,11 +111,25 @@ export default function LoginPage() {
     setOtp(next);
     if (val && i < 5) otpRefs.current[i + 1]?.focus();
   };
+
+  // ── OTP paste: fill all 6 boxes at once ───────────────────
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pasted) return;
+    const next = ['', '', '', '', '', ''];
+    pasted.split('').forEach((ch, i) => { next[i] = ch; });
+    setOtp(next);
+    // Focus the next empty box or the last one
+    const focusIdx = Math.min(pasted.length, 5);
+    otpRefs.current[focusIdx]?.focus();
+  };
+
   const handleOtpKeyDown = (i: number, e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && !otp[i] && i > 0) otpRefs.current[i - 1]?.focus();
   };
 
-  // ── Forgot password ──
+  // ── Forgot password ────────────────────────────────────────
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault(); reset();
     setLoading(true);
@@ -115,27 +141,30 @@ export default function LoginPage() {
     } finally { setLoading(false); }
   };
 
-  const inputCls = "w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all text-sm";
+  const inputCls = 'w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all text-sm';
 
   return (
     <div className="min-h-screen bg-background flex overflow-hidden">
-      {/* Left panel */}
+      {/* ── Left panel ── */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-accent via-accent/80 to-emerald-700 flex-col justify-between p-12 overflow-hidden">
         <div className="absolute top-[-80px] left-[-80px] w-[420px] h-[420px] rounded-full bg-white/10 blur-3xl animate-blob" />
         <div className="absolute bottom-[-80px] right-[-60px] w-[360px] h-[360px] rounded-full bg-white/10 blur-2xl animate-blob animation-delay-2000" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
 
+        {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
+          <div className="w-11 h-11 rounded-xl overflow-hidden shadow-xl shadow-black/30 ring-2 ring-white/30">
+            <img src="/favicon.png" alt="ስሙኒ ዋሌት" className="w-full h-full object-cover" />
           </div>
-          <span className="text-2xl font-bold text-white tracking-tight">ስሙኒ ዋሌት</span>
+          <span className="text-2xl font-black text-white tracking-tight">ስሙኒ ዋሌት</span>
         </div>
 
+        {/* Illustration */}
         <div className="relative z-10 flex-1 flex items-center justify-center py-6">
           <div className="w-full max-w-[460px]"><FinanceIllustration /></div>
         </div>
 
+        {/* Bottom text */}
         <div className="relative z-10 space-y-5">
           <div>
             <h2 className="text-2xl font-bold text-white leading-snug">Your money, intelligently managed.</h2>
@@ -145,7 +174,7 @@ export default function LoginPage() {
             {[
               { icon: TrendingUp, text: 'Real-time analytics' },
               { icon: Sparkles,   text: 'AI powered by Llama 3.3' },
-              { icon: Shield,     text: 'OTP secured login' },
+              { icon: Shield,     text: 'OTP on first signup' },
               { icon: Shield,     text: 'Bank-grade privacy' },
             ].map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-2">
@@ -156,20 +185,20 @@ export default function LoginPage() {
               </div>
             ))}
           </div>
-          <p className="text-white/30 text-xs">© 2025 ስሙኒ ዋሌት. All rights reserved.</p>
+          <p className="text-white/30 text-xs">© {new Date().getFullYear()} ስሙኒ ዋሌት — Built by Teddy</p>
         </div>
       </div>
 
-      {/* Right panel */}
+      {/* ── Right panel ── */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12 overflow-y-auto">
         <div className="w-full max-w-md space-y-6 animate-fade-up">
 
           {/* Mobile logo */}
           <div className="flex items-center gap-2 lg:hidden">
-            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-accent-foreground" />
+            <div className="w-9 h-9 rounded-xl overflow-hidden ring-2 ring-accent/30 shadow-md">
+              <img src="/favicon.png" alt="ስሙኒ ዋሌት" className="w-full h-full object-cover" />
             </div>
-            <span className="text-xl font-bold text-foreground">ስሙኒ ዋሌት</span>
+            <span className="text-xl font-black text-foreground">ስሙኒ ዋሌት</span>
           </div>
 
           {/* ── LOGIN ── */}
@@ -177,7 +206,7 @@ export default function LoginPage() {
             <>
               <div>
                 <h2 className="text-3xl font-bold text-foreground mb-1">Welcome back</h2>
-                <p className="text-muted-foreground text-sm">Sign in — we'll send you a verification code</p>
+                <p className="text-muted-foreground text-sm">Sign in with your email and password</p>
               </div>
               <div className="flex p-1 bg-secondary rounded-xl">
                 {(['login', 'register'] as const).map(m => (
@@ -187,7 +216,7 @@ export default function LoginPage() {
                   </button>
                 ))}
               </div>
-              <form onSubmit={handleLoginRequestOTP} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Email</label>
                   <input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required className={inputCls} />
@@ -201,7 +230,7 @@ export default function LoginPage() {
                 </div>
                 {error && <div className="flex gap-2 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm"><span>⚠</span><span>{error}</span></div>}
                 <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-60 shadow-lg shadow-accent/25">
-                  {loading ? <div className="w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" /> : <><span>Continue</span><ArrowRight className="w-4 h-4" /></>}
+                  {loading ? <div className="w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" /> : <><span>Sign In</span><ArrowRight className="w-4 h-4" /></>}
                 </button>
               </form>
             </>
@@ -212,7 +241,7 @@ export default function LoginPage() {
             <>
               <div>
                 <h2 className="text-3xl font-bold text-foreground mb-1">Create account</h2>
-                <p className="text-muted-foreground text-sm">Start managing your finances smarter</p>
+                <p className="text-muted-foreground text-sm">We'll send a one-time code to verify your email</p>
               </div>
               <div className="flex p-1 bg-secondary rounded-xl">
                 {(['login', 'register'] as const).map(m => (
@@ -248,37 +277,48 @@ export default function LoginPage() {
             </>
           )}
 
-          {/* ── OTP ── */}
+          {/* ── OTP (only shown after register) ── */}
           {screen === 'otp' && (
             <>
-              <button onClick={() => { setScreen('login'); reset(); }} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={() => { setScreen('register'); reset(); }} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                 <ArrowLeft className="w-4 h-4" /> Back
               </button>
               <div>
                 <div className="w-12 h-12 rounded-2xl bg-accent/15 flex items-center justify-center mb-4">
                   <Shield className="w-6 h-6 text-accent" />
                 </div>
-                <h2 className="text-3xl font-bold text-foreground mb-1">Check your email</h2>
-                <p className="text-muted-foreground text-sm">We sent a 6-digit code to <strong className="text-foreground">{email}</strong></p>
+                <h2 className="text-3xl font-bold text-foreground mb-1">Verify your email</h2>
+                <p className="text-muted-foreground text-sm">
+                  We sent a 6-digit code to <strong className="text-foreground">{email}</strong>.
+                  You can paste it directly.
+                </p>
               </div>
               <form onSubmit={handleVerifyOTP} className="space-y-6">
-                <div className="flex gap-3 justify-center">
+                <div className="flex gap-2 justify-center">
                   {otp.map((digit, i) => (
                     <input
                       key={i}
                       ref={el => { otpRefs.current[i] = el; }}
-                      type="text" inputMode="numeric" maxLength={1}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
                       value={digit}
                       onChange={e => handleOtpChange(i, e.target.value)}
                       onKeyDown={e => handleOtpKeyDown(i, e)}
-                      className="w-12 h-14 text-center text-xl font-bold rounded-xl bg-secondary border-2 border-border text-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 transition-all"
+                      onPaste={handleOtpPaste}
+                      className={`w-12 h-14 text-center text-2xl font-bold rounded-xl bg-secondary border-2 text-foreground focus:outline-none transition-all ${
+                        digit ? 'border-accent ring-2 ring-accent/20' : 'border-border focus:border-accent focus:ring-2 focus:ring-accent/30'
+                      }`}
                     />
                   ))}
                 </div>
+                <p className="text-center text-xs text-muted-foreground -mt-2">
+                  Tip: Copy the code from your email and paste it here
+                </p>
                 {error   && <div className="flex gap-2 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm"><span>⚠</span><span>{error}</span></div>}
                 {success && <div className="px-4 py-3 rounded-xl bg-accent/10 border border-accent/20 text-accent text-sm">{success}</div>}
                 <button type="submit" disabled={loading || otp.join('').length < 6} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-60 shadow-lg shadow-accent/25">
-                  {loading ? <div className="w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" /> : 'Verify & Sign In'}
+                  {loading ? <div className="w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" /> : 'Verify & Continue'}
                 </button>
                 <div className="text-center">
                   <button type="button" onClick={handleResendOTP} disabled={resendTimer > 0}
@@ -323,11 +363,11 @@ export default function LoginPage() {
               <div>
                 <h2 className="text-2xl font-bold text-foreground mb-2">Check your inbox</h2>
                 <p className="text-muted-foreground text-sm">
-                  If <strong className="text-foreground">{email}</strong> exists, a password reset link has been sent. Check your spam folder too.
+                  If <strong className="text-foreground">{email}</strong> exists, a reset link has been sent.
                 </p>
               </div>
               <p className="text-xs text-muted-foreground bg-secondary rounded-xl px-4 py-3">
-                💡 The reset link expires in 1 hour. Check the server console for the link (email not configured in dev mode).
+                💡 Check the server console for the reset link (email SMTP not configured yet).
               </p>
               <button onClick={() => { setScreen('login'); reset(); }} className="flex items-center gap-1.5 text-sm text-accent hover:underline mx-auto">
                 <ArrowLeft className="w-4 h-4" /> Back to sign in

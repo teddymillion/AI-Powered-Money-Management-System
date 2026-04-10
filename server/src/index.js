@@ -23,8 +23,8 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Serve uploaded avatars
-app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+// Serve uploaded avatars — path relative to project root (server/)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

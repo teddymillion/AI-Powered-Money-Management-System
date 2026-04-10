@@ -2,10 +2,36 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 import { User } from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
+
+// ── Nodemailer transporter (Gmail) ─────────────────────────
+function createTransporter() {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+}
+
+async function sendEmail({ to, subject, html }) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log(`\n📧 [EMAIL NOT CONFIGURED] TO: ${to}\nSUBJECT: ${subject}\n${html}\n`);
+    return;
+  }
+  const transporter = createTransporter();
+  await transporter.sendMail({
+    from: `"ስሙኒ ዋሌት" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  });
+}
 
 function signToken(user) {
   return jwt.sign(
@@ -17,14 +43,6 @@ function signToken(user) {
 
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-// Simulate email — logs to console (replace with nodemailer in production)
-async function sendEmail({ to, subject, text }) {
-  console.log(`\n📧 EMAIL TO: ${to}\nSUBJECT: ${subject}\n${text}\n`);
-  // To use real email, configure nodemailer here:
-  // const transporter = nodemailer.createTransport({ ... });
-  // await transporter.sendMail({ from, to, subject, text });
 }
 
 // ── Register ──────────────────────────────────────────────
@@ -56,7 +74,30 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// ── Step 1: Login — send OTP ──────────────────────────────
+// ── Direct login (password only, no OTP) ─────────────────
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ error: 'Invalid credentials.' });
+
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isValid) return res.status(401).json({ error: 'Invalid credentials.' });
+
+    const token = signToken(user);
+    return res.json({
+      token,
+      user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar },
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to login.' });
+  }
+});
+
+// ── Step 1: Register OTP — send OTP ──────────────────────
 router.post('/login/request-otp', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -77,7 +118,25 @@ router.post('/login/request-otp', async (req, res) => {
     await sendEmail({
       to: email,
       subject: 'ስሙኒ ዋሌት — Your Login OTP',
-      text: `Your one-time password is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you did not request this, please ignore this email.`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0f1117;border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,#10b981,#059669);padding:32px;text-align:center">
+            <h1 style="color:#fff;margin:0;font-size:24px;font-weight:700">ስሙኒ ዋሌት</h1>
+            <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px">AI-Powered Money Management</p>
+          </div>
+          <div style="padding:32px">
+            <h2 style="color:#f5f5f5;font-size:20px;margin:0 0 8px">Your Login Code</h2>
+            <p style="color:#94a3b8;font-size:14px;margin:0 0 24px">Use this one-time password to sign in. It expires in <strong style="color:#f5f5f5">10 minutes</strong>.</p>
+            <div style="background:#1a1d27;border:2px solid #10b981;border-radius:12px;padding:24px;text-align:center;margin:0 0 24px">
+              <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#10b981">${otp}</span>
+            </div>
+            <p style="color:#64748b;font-size:12px;margin:0">If you did not request this code, please ignore this email. Your account is safe.</p>
+          </div>
+          <div style="background:#0a0c12;padding:16px;text-align:center">
+            <p style="color:#475569;font-size:11px;margin:0">&copy; ${new Date().getFullYear()} ስሙኒ ዋሌት &mdash; Built by Teddy</p>
+          </div>
+        </div>
+      `,
     });
 
     return res.json({ message: 'OTP sent to your email.', email });
@@ -137,7 +196,27 @@ router.post('/forgot-password', async (req, res) => {
     await sendEmail({
       to: email,
       subject: 'ስሙኒ ዋሌት — Reset Your Password',
-      text: `Click the link below to reset your password:\n\n${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you did not request this, please ignore this email.`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0f1117;border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,#10b981,#059669);padding:32px;text-align:center">
+            <h1 style="color:#fff;margin:0;font-size:24px;font-weight:700">ስሙኒ ዋሌት</h1>
+            <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px">Password Reset Request</p>
+          </div>
+          <div style="padding:32px">
+            <h2 style="color:#f5f5f5;font-size:20px;margin:0 0 8px">Reset Your Password</h2>
+            <p style="color:#94a3b8;font-size:14px;margin:0 0 24px">Click the button below to reset your password. This link expires in <strong style="color:#f5f5f5">1 hour</strong>.</p>
+            <div style="text-align:center;margin:0 0 24px">
+              <a href="${resetUrl}" style="display:inline-block;background:#10b981;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:12px;text-decoration:none">Reset Password</a>
+            </div>
+            <p style="color:#64748b;font-size:12px;margin:0 0 8px">Or copy this link into your browser:</p>
+            <p style="color:#10b981;font-size:11px;word-break:break-all;margin:0">${resetUrl}</p>
+            <p style="color:#64748b;font-size:12px;margin:16px 0 0">If you did not request a password reset, please ignore this email.</p>
+          </div>
+          <div style="background:#0a0c12;padding:16px;text-align:center">
+            <p style="color:#475569;font-size:11px;margin:0">&copy; ${new Date().getFullYear()} ስሙኒ ዋሌት &mdash; Built by Teddy</p>
+          </div>
+        </div>
+      `,
     });
 
     return res.json({ message: 'If that email exists, a reset link has been sent.' });
@@ -190,8 +269,24 @@ router.post('/resend-otp', async (req, res) => {
 
     await sendEmail({
       to: email,
-      subject: 'ስሙኒ ዋሌት — New OTP',
-      text: `Your new one-time password is: ${otp}\n\nExpires in 10 minutes.`,
+      subject: 'ስሙኒ ዋሌት — New Login Code',
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0f1117;border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,#10b981,#059669);padding:32px;text-align:center">
+            <h1 style="color:#fff;margin:0;font-size:24px;font-weight:700">ስሙኒ ዋሌት</h1>
+          </div>
+          <div style="padding:32px">
+            <h2 style="color:#f5f5f5;font-size:20px;margin:0 0 8px">Your New Login Code</h2>
+            <p style="color:#94a3b8;font-size:14px;margin:0 0 24px">Expires in <strong style="color:#f5f5f5">10 minutes</strong>.</p>
+            <div style="background:#1a1d27;border:2px solid #10b981;border-radius:12px;padding:24px;text-align:center">
+              <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#10b981">${otp}</span>
+            </div>
+          </div>
+          <div style="background:#0a0c12;padding:16px;text-align:center">
+            <p style="color:#475569;font-size:11px;margin:0">&copy; ${new Date().getFullYear()} ስሙኒ ዋሌት &mdash; Built by Teddy</p>
+          </div>
+        </div>
+      `,
     });
 
     return res.json({ message: 'New OTP sent.' });
