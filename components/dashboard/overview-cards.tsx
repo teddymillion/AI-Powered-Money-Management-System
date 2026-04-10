@@ -1,6 +1,9 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { ArrowUpRight, ArrowDownLeft, TrendingUp, Wallet } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface OverviewCardsProps {
   income: number;
@@ -12,14 +15,18 @@ interface OverviewCardsProps {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="skeleton h-3 w-16 rounded" />
-        <div className="skeleton h-9 w-9 rounded-xl" />
-      </div>
-      <div className="skeleton h-8 w-28 rounded" />
-      <div className="skeleton h-1.5 w-12 rounded-full" />
-    </div>
+    <Card className="rounded-2xl border-border/60 bg-card/70">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="skeleton h-3 w-16 rounded" />
+          <div className="skeleton h-9 w-9 rounded-xl" />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="skeleton h-8 w-28 rounded" />
+        <div className="skeleton h-2 w-20 rounded-full" />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -79,37 +86,38 @@ export function OverviewCards({ income, expenses, savings, balance, loading = fa
         const isNegative = card.amount < 0;
 
         return (
-          <div
+          <motion.div
             key={card.label}
-            className="group relative rounded-2xl border border-border bg-card overflow-hidden card-hover cursor-default"
-            style={{ animationDelay: `${i * 80}ms` }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05, duration: 0.35 }}
+            className="group"
           >
-            {/* Gradient tint */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-60`} />
-
-            <div className="relative p-6">
-              <div className="flex items-start justify-between mb-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {card.label}
-                </p>
-                <div className={`${card.iconBg} p-2.5 rounded-xl group-hover:scale-110 transition-transform duration-200`}>
-                  <Icon className={`w-4 h-4 ${card.iconColor}`} />
+            <Card className="relative overflow-hidden rounded-2xl border-border/70 bg-card/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+              <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-70`} />
+              <CardHeader className="relative pb-2">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                      {card.label}
+                    </CardTitle>
+                    <Badge variant="secondary" className="bg-background/70 text-[10px] uppercase tracking-widest">
+                      This month
+                    </Badge>
+                  </div>
+                  <div className={`${card.iconBg} p-2.5 rounded-xl transition-transform duration-200 group-hover:scale-110`}>
+                    <Icon className={`w-4 h-4 ${card.iconColor}`} />
+                  </div>
                 </div>
-              </div>
-
-              <div className="space-y-1">
-                <p className={`text-2xl font-bold tracking-tight ${isNegative ? 'text-red-500' : 'text-foreground'}`}>
+              </CardHeader>
+              <CardContent className="relative">
+                <p className={`text-2xl font-semibold tracking-tight ${isNegative ? 'text-red-500' : 'text-foreground'}`}>
                   {isNegative ? '-' : ''}ETB {formatted}
                 </p>
-                <p className="text-xs text-muted-foreground">This month</p>
-              </div>
-
-              {/* Bottom accent line */}
-              <div className={`absolute bottom-0 left-0 h-0.5 w-0 group-hover:w-full transition-all duration-500 bg-gradient-to-r ${
-                card.iconColor.replace('text-', 'from-').replace('-500', '-500')
-              } to-transparent`} />
-            </div>
-          </div>
+                <div className="mt-3 h-1 w-12 rounded-full bg-gradient-to-r from-white/40 to-transparent group-hover:w-16 transition-all duration-300" />
+              </CardContent>
+            </Card>
+          </motion.div>
         );
       })}
     </div>
