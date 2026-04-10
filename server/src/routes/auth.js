@@ -52,6 +52,28 @@ function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function otpEmailHtml(firstName, otp) {
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0f1117;border-radius:16px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#10b981,#059669);padding:32px;text-align:center">
+        <h1 style="color:#fff;margin:0;font-size:24px;font-weight:700">ስሙኒ ዋሌት</h1>
+        <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px">AI-Powered Money Management</p>
+      </div>
+      <div style="padding:32px">
+        <h2 style="color:#f5f5f5;font-size:20px;margin:0 0 8px">Your Verification Code</h2>
+        <p style="color:#94a3b8;font-size:14px;margin:0 0 24px">Hi ${firstName}! Use this code to verify your account. Expires in <strong style="color:#f5f5f5">10 minutes</strong>.</p>
+        <div style="background:#1a1d27;border:2px solid #10b981;border-radius:12px;padding:24px;text-align:center;margin:0 0 24px">
+          <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#10b981">${otp}</span>
+        </div>
+        <p style="color:#64748b;font-size:12px;margin:0">If you did not request this, ignore this email.</p>
+      </div>
+      <div style="background:#0a0c12;padding:16px;text-align:center">
+        <p style="color:#475569;font-size:11px;margin:0">&copy; ${new Date().getFullYear()} ስሙኒ ዋሌት &mdash; Built by Teddy</p>
+      </div>
+    </div>
+  `;
+}
+
 // ── Register ──────────────────────────────────────────────
 router.post('/register', async (req, res) => {
   try {
@@ -65,8 +87,37 @@ router.post('/register', async (req, res) => {
     if (password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters.' });
     }
+
     const existing = await User.findOne({ email });
-    if (existing) return res.status(409).json({ error: 'Email already in use.' });
+
+    // If account exists and is already verified — block
+    if (existing && existing.isVerified) {
+      return res.status(409).json({ error: 'An account with this email already exists. Please sign in.' });
+    }
+
+    // If account exists but NOT verified — resend OTP (user went back and retried)
+    if (existing && !existing.isVerified) {
+      const otp = generateOTP();
+      existing.otp = otp;
+      existing.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+      existing.name = name;
+      existing.passwordHash = await bcrypt.hash(password, 10);
+      await existing.save();
+
+      sendEmail({
+        to: email,
+        subject: 'ስሙኒ ዋሌት — Verify Your Email',
+        html: otpEmailHtml(name.split(' ')[0], otp),
+      }).catch(err => {
+        console.error('❌ Resend OTP email failed:', err.message);
+        console.error('OTP for', email, ':', otp); // fallback: log OTP to Render logs
+      });
+
+      return res.status(201).json({
+        message: 'Verification code resent. Check your email.',
+        email: existing.email,
+      });
+    }
 
     const passwordHash = await bcrypt.hash(password, 10);
     const welcomeNotif = {
@@ -78,37 +129,19 @@ router.post('/register', async (req, res) => {
       createdAt: new Date(),
     };
 
-    // Generate OTP for email verification on first signup
     const otp = generateOTP();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
-    const user = await User.create({ name, email, passwordHash, otp, otpExpiry, notifications: [welcomeNotif] });
+    const user = await User.create({ name, email, passwordHash, otp, otpExpiry, isVerified: false, notifications: [welcomeNotif] });
 
-    // Send OTP email — log errors visibly so we can debug on Render
     sendEmail({
       to: email,
       subject: 'ስሙኒ ዋሌት — Verify Your Email',
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0f1117;border-radius:16px;overflow:hidden">
-          <div style="background:linear-gradient(135deg,#10b981,#059669);padding:32px;text-align:center">
-            <h1 style="color:#fff;margin:0;font-size:24px;font-weight:700">ስሙኒ ዋሌት</h1>
-            <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px">AI-Powered Money Management</p>
-          </div>
-          <div style="padding:32px">
-            <h2 style="color:#f5f5f5;font-size:20px;margin:0 0 8px">Verify Your Email</h2>
-            <p style="color:#94a3b8;font-size:14px;margin:0 0 24px">Welcome ${name.split(' ')[0]}! Use this code to verify your account. Expires in <strong style="color:#f5f5f5">10 minutes</strong>.</p>
-            <div style="background:#1a1d27;border:2px solid #10b981;border-radius:12px;padding:24px;text-align:center;margin:0 0 24px">
-              <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#10b981">${otp}</span>
-            </div>
-          </div>
-          <div style="background:#0a0c12;padding:16px;text-align:center">
-            <p style="color:#475569;font-size:11px;margin:0">&copy; ${new Date().getFullYear()} ስሙኒ ዋሌት &mdash; Built by Teddy</p>
-          </div>
-        </div>
-      `,
+      html: otpEmailHtml(name.split(' ')[0], otp),
     }).catch(err => {
       console.error('❌ Register OTP email failed:', err.message);
       console.error('MAIL_USER set:', !!process.env.MAIL_USER, '| MAIL_PASS set:', !!process.env.MAIL_PASS);
+      console.error('OTP for', email, ':', otp); // fallback: log OTP to Render logs
     });
 
     return res.status(201).json({
@@ -116,6 +149,7 @@ router.post('/register', async (req, res) => {
       email: user.email,
     });
   } catch (error) {
+    console.error('Register error:', error.message);
     return res.status(500).json({ error: 'Failed to register user.' });
   }
 });
@@ -129,6 +163,11 @@ router.post('/login', async (req, res) => {
     }
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ error: 'No account found with this email. Please register first.' });
+
+    // Block login if email not verified yet
+    if (!user.isVerified) {
+      return res.status(403).json({ error: 'Please verify your email first. Check your inbox for the OTP code.' });
+    }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) return res.status(401).json({ error: 'Incorrect password. Please try again.' });
@@ -210,6 +249,7 @@ router.post('/login/verify-otp', async (req, res) => {
 
     user.otp = null;
     user.otpExpiry = null;
+    user.isVerified = true;
     await user.save();
 
     // Push a sign-in notification
