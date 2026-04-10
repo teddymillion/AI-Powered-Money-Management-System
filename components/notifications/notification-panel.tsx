@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Check, CheckCheck, Info, AlertTriangle, CheckCircle, XCircle, X } from 'lucide-react';
+import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle, XCircle, X } from 'lucide-react';
 import { api } from '@/lib/api';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 interface Notification {
   id: string;
@@ -14,20 +16,23 @@ interface Notification {
 }
 
 const TYPE_CONFIG = {
-  info:    { icon: Info,          color: 'text-blue-500',   bg: 'bg-blue-500/10'   },
+  info:    { icon: Info,          color: 'text-blue-500',    bg: 'bg-blue-500/10'    },
   success: { icon: CheckCircle,   color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  warning: { icon: AlertTriangle, color: 'text-amber-500',  bg: 'bg-amber-500/10'  },
-  error:   { icon: XCircle,       color: 'text-red-500',    bg: 'bg-red-500/10'    },
+  warning: { icon: AlertTriangle, color: 'text-amber-500',   bg: 'bg-amber-500/10'   },
+  error:   { icon: XCircle,       color: 'text-red-500',     bg: 'bg-red-500/10'     },
 };
 
 export function NotificationPanel() {
   const [open, setOpen]                   = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading]             = useState(false);
+  const [newCount, setNewCount]           = useState(0); // tracks SSE-pushed unseen
   const panelRef                          = useRef<HTMLDivElement>(null);
+  const eventSourceRef                    = useRef<EventSource | null>(null);
 
   const unread = notifications.filter(n => !n.read).length;
 
+  // ── Initial fetch ──────────────────────────────────────────
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
@@ -37,11 +42,34 @@ export function NotificationPanel() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => {
-    if (open) fetchNotifications();
-  }, [open, fetchNotifications]);
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
-  // Close on outside click
+  // ── SSE real-time stream ───────────────────────────────────
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    // EventSource doesn't support custom headers — pass token as query param
+    const es = new EventSource(`${API_BASE}/profile/notifications/stream?token=${token}`);
+    eventSourceRef.current = es;
+
+    es.onmessage = (e) => {
+      try {
+        const notif: Notification = JSON.parse(e.data);
+        setNotifications(prev => [notif, ...prev.filter(n => n.id !== notif.id)]);
+        setNewCount(c => c + 1);
+      } catch { /* ignore malformed */ }
+    };
+
+    es.onerror = () => { es.close(); };
+
+    return () => { es.close(); };
+  }, []);
+
+  // Reset new badge when panel opens
+  useEffect(() => { if (open) setNewCount(0); }, [open]);
+
+  // ── Close on outside click ─────────────────────────────────
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false);
@@ -61,13 +89,14 @@ export function NotificationPanel() {
   };
 
   const formatTime = (iso: string) => {
-    const d = new Date(iso);
-    const diff = Date.now() - d.getTime();
-    if (diff < 60000)   return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    const diff = Date.now() - new Date(iso).getTime();
+    if (diff < 60000)    return 'Just now';
+    if (diff < 3600000)  return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
+
+  const badgeCount = newCount > 0 ? newCount : unread;
 
   return (
     <div className="relative" ref={panelRef}>
@@ -76,9 +105,9 @@ export function NotificationPanel() {
         className="relative w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-secondary hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200"
       >
         <Bell className="w-4 h-4" />
-        {unread > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
-            {unread > 9 ? '9+' : unread}
+        {badgeCount > 0 && (
+          <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-accent-foreground text-[9px] font-bold flex items-center justify-center ${newCount > 0 ? 'bg-red-500 animate-pulse' : 'bg-accent'}`}>
+            {badgeCount > 9 ? '9+' : badgeCount}
           </span>
         )}
       </button>
