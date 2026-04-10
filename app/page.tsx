@@ -546,7 +546,7 @@ export default function LandingPage() {
                 <Link href="/about" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">About</Link>
                 <Link href="/terms" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
                 <a href="mailto:tedrosmilion19@gmail.com" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
-                <a href="https://t.me/Lataxv72" target="_blank" rel="noopener noreferrer" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">Support</a>
+                <a href="https://t.me/Lataxv7" target="_blank" rel="noopener noreferrer" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">Support</a>
               </div>
             </div>
           </div>
