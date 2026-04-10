@@ -1,97 +1,127 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Menu, X, BarChart3, Zap, Target, MessageSquare, Home } from 'lucide-react';
+import {
+  LayoutDashboard, Sparkles, Target, BarChart3,
+  LogOut, Menu, X, Zap, ChevronRight,
+} from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 
-const NAVIGATION_ITEMS = [
-  { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/assistant', label: 'AI Assistant', icon: MessageSquare },
-  { href: '/budget', label: 'Budget & Goals', icon: Target },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+const NAV = [
+  { href: '/',           label: 'Dashboard',    icon: LayoutDashboard, badge: null },
+  { href: '/assistant',  label: 'AI Assistant', icon: Sparkles,        badge: 'AI' },
+  { href: '/budget',     label: 'Budget',       icon: Target,          badge: null },
+  { href: '/analytics',  label: 'Analytics',    icon: BarChart3,       badge: null },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(true);
+  const router   = useRouter();
+  const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  const initials = user?.name
+    ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
+
+  const handleLogout = () => { logout(); router.push('/login'); };
+
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
+      {/* Logo */}
+      <div className="px-6 py-5 border-b border-sidebar-border">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-lg shadow-accent/30">
+            <Zap className="w-4 h-4 text-accent-foreground" />
+          </div>
+          <div>
+            <p className="text-base font-bold text-sidebar-foreground tracking-tight">FinFlow</p>
+            <p className="text-[10px] text-sidebar-accent-foreground font-medium uppercase tracking-widest">AI Finance</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto scrollbar-thin">
+        <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-accent-foreground">
+          Menu
+        </p>
+        {NAV.map((item) => {
+          const Icon     = item.icon;
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive
+                  ? 'bg-accent text-accent-foreground shadow-md shadow-accent/20'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground'
+              }`}
+            >
+              <Icon className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-110'}`} />
+              <span className="flex-1">{item.label}</span>
+              {item.badge && (
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                  isActive ? 'bg-accent-foreground/20 text-accent-foreground' : 'bg-accent/15 text-accent'
+                }`}>
+                  {item.badge}
+                </span>
+              )}
+              {isActive && <ChevronRight className="w-3 h-3 opacity-60" />}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* User */}
+      <div className="px-3 py-4 border-t border-sidebar-border space-y-1">
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-sidebar-accent">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center flex-shrink-0 text-xs font-bold text-accent-foreground">
+            {initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-sidebar-foreground truncate">{user?.name || 'User'}</p>
+            <p className="text-xs text-sidebar-accent-foreground truncate">{user?.email || ''}</p>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-sidebar-accent-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign Out
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <>
       {/* Mobile toggle */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 lg:hidden p-2 hover:bg-sidebar-accent rounded-lg transition-colors"
+        onClick={() => setOpen(!open)}
+        className="fixed top-4 left-4 z-50 lg:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-card border border-border shadow-sm"
       >
-        {isOpen ? (
-          <X className="w-6 h-6" />
-        ) : (
-          <Menu className="w-6 h-6" />
-        )}
+        {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
       </button>
 
-      {/* Sidebar */}
-      <aside
-        className={`fixed left-0 top-0 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-out ${
-          isOpen ? 'w-64' : 'w-0'
-        } lg:w-64 z-40 overflow-hidden lg:overflow-visible`}
-      >
-        <div className="p-6 h-full flex flex-col">
-          {/* Logo */}
-          <div className="mb-8 pt-2">
-            <h1 className="text-2xl font-bold text-sidebar-foreground flex items-center gap-2">
-              <Zap className="w-6 h-6 text-sidebar-primary" />
-              FinFlow
-            </h1>
-            <p className="text-xs text-sidebar-accent-foreground mt-1">Personal Finance AI</p>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 space-y-1">
-            {NAVIGATION_ITEMS.map((item, index) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 group ${
-                    isActive
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-lg'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-primary'
-                  }`}
-                  style={{
-                    animationDelay: `${index * 50}ms`,
-                  }}
-                >
-                  <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                  <span className="text-sm font-medium">{item.label}</span>
-                  {isActive && (
-                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary-foreground" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Footer */}
-          <div className="pt-4 border-t border-sidebar-border">
-            <div className="px-4 py-3 rounded-lg bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-all duration-300 group cursor-pointer border border-sidebar-border/50 hover:border-sidebar-primary/30">
-              <p className="text-xs text-sidebar-accent-foreground mb-2 font-semibold uppercase tracking-wider">Account</p>
-              <p className="text-sm font-medium text-sidebar-foreground group-hover:text-sidebar-primary transition-colors">Abebe Kebede</p>
-              <p className="text-xs text-sidebar-accent-foreground">abebe@example.com</p>
-            </div>
-          </div>
-        </div>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex-col z-40">
+        <SidebarContent />
       </aside>
 
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setIsOpen(false)}
-        />
+      {/* Mobile drawer */}
+      {open && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setOpen(false)} />
+          <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border z-50 lg:hidden animate-fade-in">
+            <SidebarContent />
+          </aside>
+        </>
       )}
     </>
   );

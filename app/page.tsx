@@ -1,51 +1,71 @@
+'use client';
+
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { OverviewCards } from '@/components/dashboard/overview-cards';
 import { SpendingChart } from '@/components/dashboard/spending-chart';
 import { RecentTransactions } from '@/components/dashboard/recent-transactions';
 import { AIInsightCard } from '@/components/dashboard/ai-insight-card';
-import { MONTHLY_OVERVIEW, SPENDING_BY_CATEGORY, TRANSACTIONS, AI_INSIGHTS } from '@/lib/mock-data';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { useAuth } from '@/lib/auth-context';
+import { Sparkles } from 'lucide-react';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const { summary, transactions, insights, spendingByCategory, loading, insightsLoading, error, insightFresh } = useDashboardData();
+  const firstName = user?.name?.split(' ')[0] || 'there';
+  const now = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in">
-        {/* Page Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome back, Abebe
-          </h1>
-          <p className="text-muted-foreground">
-            Here&apos;s your financial overview for March 2024
-          </p>
+      <div className="space-y-6 animate-fade-up">
+
+        {/* Hero header */}
+        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-accent via-accent/80 to-emerald-700 p-6 lg:p-8">
+          {/* Blobs */}
+          <div className="absolute top-[-40px] right-[-40px] w-48 h-48 rounded-full bg-white/10 animate-blob" />
+          <div className="absolute bottom-[-30px] left-1/3 w-36 h-36 rounded-full bg-white/5 animate-blob animation-delay-2000" />
+
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-white/60 text-xs font-medium mb-1">{now}</p>
+              <h1 className="text-2xl lg:text-3xl font-bold text-white">
+                Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {firstName} 👋
+              </h1>
+              <p className="text-white/70 text-sm mt-1">Here's your financial overview for this month.</p>
+            </div>
+            <div className="flex items-center gap-2 bg-white/15 backdrop-blur border border-white/20 rounded-xl px-4 py-2.5 w-fit">
+              <Sparkles className="w-4 h-4 text-white" />
+              <span className="text-white text-xs font-semibold">AI-Powered Insights Active</span>
+            </div>
+          </div>
         </div>
 
-        {/* Overview Cards */}
+        {error && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            ⚠ {error}
+          </div>
+        )}
+
+        {/* KPI Cards */}
         <OverviewCards
-          balance={MONTHLY_OVERVIEW.balance}
-          income={MONTHLY_OVERVIEW.income}
-          expenses={MONTHLY_OVERVIEW.expenses}
-          savings={MONTHLY_OVERVIEW.savings}
+          balance={summary?.balance ?? 0}
+          income={summary?.income ?? 0}
+          expenses={summary?.expenses ?? 0}
+          savings={summary?.savings ?? 0}
+          loading={loading}
         />
 
-        {/* AI Insight */}
-        <AIInsightCard insights={AI_INSIGHTS} />
+        {/* AI Insights */}
+        <AIInsightCard insights={insights} loading={insightsLoading} highlight={insightFresh} />
 
-        {/* Charts and Transactions */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Spending Chart - larger on desktop */}
+        {/* Charts + Transactions */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-3">
+            <SpendingChart data={spendingByCategory} loading={loading} />
+          </div>
           <div className="lg:col-span-2">
-            <SpendingChart data={SPENDING_BY_CATEGORY} />
+            <RecentTransactions transactions={transactions} loading={loading} error={error} />
           </div>
-
-          {/* Recent Transactions - side panel */}
-          <div className="lg:col-span-1">
-            <RecentTransactions transactions={TRANSACTIONS} />
-          </div>
-        </div>
-
-        {/* Full width Recent Transactions on mobile */}
-        <div className="hidden max-lg:block">
-          <RecentTransactions transactions={TRANSACTIONS} />
         </div>
       </div>
     </DashboardLayout>

@@ -1,53 +1,76 @@
 'use client';
 
-import { Bell, Search, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import { Sun, Moon, Bell, Search } from 'lucide-react';
 import { AddTransactionModal } from '@/components/transaction/add-transaction-modal';
+import { useAuth } from '@/lib/auth-context';
 
 export function Header() {
+  const { user } = useAuth();
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const dark = stored ? stored === 'dark' : prefersDark;
+    setIsDark(dark);
+    document.documentElement.classList.toggle('dark', dark);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('theme', next ? 'dark' : 'light');
+  };
+
+  const initials = user?.name
+    ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
+
   return (
-    <header className="h-16 border-b border-border bg-background/50 backdrop-blur-sm sticky top-0 z-20">
-      <div className="h-full px-4 lg:px-8 flex items-center justify-between">
-        {/* Left - Search (hidden on mobile without sidebar space) */}
-        <div className="hidden md:flex items-center flex-1 max-w-md">
+    <header className="h-16 sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-xl">
+      <div className="h-full px-4 lg:px-8 flex items-center gap-4">
+        {/* Search */}
+        <div className="hidden md:flex flex-1 max-w-sm">
           <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search transactions..."
-              className="w-full pl-10 pr-4 py-2 bg-secondary/70 hover:bg-secondary text-foreground rounded-lg text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:bg-secondary transition-all duration-300 border border-border/30 hover:border-border/50"
+              className="w-full pl-9 pr-4 py-2 bg-secondary border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all"
             />
           </div>
         </div>
 
-        {/* Right - Actions */}
-        <div className="flex items-center gap-4 ml-auto">
-          {/* Add Transaction Button */}
+        <div className="flex items-center gap-2 ml-auto">
+          {/* Add Transaction */}
           <AddTransactionModal />
-          {/* Notification Bell */}
-          <div className="hidden sm:flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative hover:bg-secondary/70 transition-all duration-300 hover:scale-110 group"
-            >
-              <Bell className="w-5 h-5 group-hover:text-accent transition-colors" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
-            </Button>
 
-            {/* Settings */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hover:bg-secondary/70 transition-all duration-300 hover:scale-110 group"
-            >
-              <Settings className="w-5 h-5 group-hover:text-accent group-hover:rotate-90 transition-all duration-300" />
-            </Button>
-          </div>
+          {/* Theme */}
+          <button
+            onClick={toggleTheme}
+            title={isDark ? 'Light mode' : 'Dark mode'}
+            className="w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-secondary hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200"
+          >
+            {isDark
+              ? <Sun className="w-4 h-4" />
+              : <Moon className="w-4 h-4" />
+            }
+          </button>
 
-          {/* Profile Avatar */}
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center cursor-pointer hover:shadow-lg hover:scale-110 transition-all duration-300 group">
-            <span className="text-sm font-semibold text-accent-foreground group-hover:text-white">AK</span>
+          {/* Bell */}
+          <button
+            title="Notifications"
+            className="relative w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-secondary hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200"
+          >
+            <Bell className="w-4 h-4" />
+            <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-accent rounded-full" />
+          </button>
+
+          {/* Avatar */}
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center cursor-pointer hover:shadow-lg hover:shadow-accent/20 transition-all duration-200 text-xs font-bold text-accent-foreground">
+            {initials}
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
-import { Card } from '@/components/ui/card';
-import { CurrencyDisplay } from '@/components/common/currency-display';
+'use client';
+
 import { ArrowUpRight, ArrowDownLeft, TrendingUp, Wallet } from 'lucide-react';
 
 interface OverviewCardsProps {
@@ -7,89 +7,109 @@ interface OverviewCardsProps {
   expenses: number;
   savings: number;
   balance: number;
+  loading?: boolean;
 }
 
-export function OverviewCards({
-  income,
-  expenses,
-  savings,
-  balance,
-}: OverviewCardsProps) {
+function SkeletonCard() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="skeleton h-3 w-16 rounded" />
+        <div className="skeleton h-9 w-9 rounded-xl" />
+      </div>
+      <div className="skeleton h-8 w-28 rounded" />
+      <div className="skeleton h-1.5 w-12 rounded-full" />
+    </div>
+  );
+}
+
+export function OverviewCards({ income, expenses, savings, balance, loading = false }: OverviewCardsProps) {
   const cards = [
     {
-      label: 'Balance',
+      label: 'Total Balance',
       amount: balance,
       icon: Wallet,
-      color: 'from-accent to-accent/60',
-      textColor: 'text-accent-foreground',
-      bgColor: 'bg-accent/10',
+      iconBg: 'bg-accent/15',
+      iconColor: 'text-accent',
+      trend: null,
+      gradient: 'from-accent/10 via-transparent to-transparent',
     },
     {
-      label: 'Income',
+      label: 'Monthly Income',
       amount: income,
       icon: ArrowUpRight,
-      color: 'from-green-600 to-green-500',
-      textColor: 'text-green-400',
-      bgColor: 'bg-green-500/10',
+      iconBg: 'bg-emerald-500/15',
+      iconColor: 'text-emerald-500',
+      trend: '+income',
+      gradient: 'from-emerald-500/10 via-transparent to-transparent',
     },
     {
-      label: 'Expenses',
+      label: 'Total Expenses',
       amount: expenses,
       icon: ArrowDownLeft,
-      color: 'from-red-600 to-red-500',
-      textColor: 'text-red-400',
-      bgColor: 'bg-red-500/10',
+      iconBg: 'bg-red-500/15',
+      iconColor: 'text-red-500',
+      trend: '-expenses',
+      gradient: 'from-red-500/10 via-transparent to-transparent',
     },
     {
-      label: 'Savings',
+      label: 'Net Savings',
       amount: savings,
       icon: TrendingUp,
-      color: 'from-cyan-600 to-cyan-500',
-      textColor: 'text-cyan-400',
-      bgColor: 'bg-cyan-500/10',
+      iconBg: 'bg-blue-500/15',
+      iconColor: 'text-blue-500',
+      trend: savings >= 0 ? '+savings' : '-savings',
+      gradient: 'from-blue-500/10 via-transparent to-transparent',
     },
   ];
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map((card, index) => {
-        const Icon = card.icon;
-        return (
-          <Card
-            key={card.label}
-            className="relative overflow-hidden border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card hover:border-border/60 hover:shadow-lg transition-all duration-500 group cursor-default"
-            style={{
-              animationDelay: `${index * 100}ms`,
-            }}
-          >
-            {/* Gradient background effect with enhanced opacity on hover */}
-            <div
-              className={`absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-10 group-hover:opacity-20 bg-gradient-to-br ${card.color} transition-opacity duration-500`}
-            />
-            
-            {/* Secondary gradient for depth */}
-            <div className="absolute -left-6 -bottom-6 w-24 h-24 rounded-full opacity-5 bg-gradient-to-br from-accent/50 to-accent/10" />
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {[0,1,2,3].map((i) => <SkeletonCard key={i} />)}
+      </div>
+    );
+  }
 
-            <div className="relative p-6 space-y-4">
-              <div className="flex items-start justify-between">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {cards.map((card, i) => {
+        const Icon = card.icon;
+        const formatted = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.abs(card.amount));
+        const isNegative = card.amount < 0;
+
+        return (
+          <div
+            key={card.label}
+            className="group relative rounded-2xl border border-border bg-card overflow-hidden card-hover cursor-default"
+            style={{ animationDelay: `${i * 80}ms` }}
+          >
+            {/* Gradient tint */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-60`} />
+
+            <div className="relative p-6">
+              <div className="flex items-start justify-between mb-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   {card.label}
-                </span>
-                <div
-                  className={`${card.bgColor} p-2.5 rounded-lg group-hover:scale-110 transition-transform duration-300`}
-                >
-                  <Icon className={`w-4 h-4 ${card.textColor}`} />
+                </p>
+                <div className={`${card.iconBg} p-2.5 rounded-xl group-hover:scale-110 transition-transform duration-200`}>
+                  <Icon className={`w-4 h-4 ${card.iconColor}`} />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-3xl font-bold text-foreground tracking-tight">
-                  <CurrencyDisplay amount={card.amount} />
+              <div className="space-y-1">
+                <p className={`text-2xl font-bold tracking-tight ${isNegative ? 'text-red-500' : 'text-foreground'}`}>
+                  {isNegative ? '-' : ''}ETB {formatted}
                 </p>
-                <div className="h-0.5 w-8 bg-gradient-to-r from-accent to-accent/30 rounded-full group-hover:w-12 transition-all duration-500" />
+                <p className="text-xs text-muted-foreground">This month</p>
               </div>
+
+              {/* Bottom accent line */}
+              <div className={`absolute bottom-0 left-0 h-0.5 w-0 group-hover:w-full transition-all duration-500 bg-gradient-to-r ${
+                card.iconColor.replace('text-', 'from-').replace('-500', '-500')
+              } to-transparent`} />
             </div>
-          </Card>
+          </div>
         );
       })}
     </div>
