@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, ArrowLeft, Shield, TrendingUp, Sparkles, RefreshCw } from 'lucide-react';
+import Image from 'next/image';
+import { ArrowRight, ArrowLeft, Shield, TrendingUp, Sparkles, RefreshCw, Brain, Zap } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { api, APIError } from '@/lib/api';
-import { FinanceIllustration } from '@/components/finance-illustration';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -146,31 +146,77 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex overflow-hidden">
       {/* ── Left panel ── */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-accent via-accent/80 to-emerald-700 flex-col justify-between p-12 overflow-hidden">
-        <div className="absolute top-[-80px] left-[-80px] w-[420px] h-[420px] rounded-full bg-white/10 blur-3xl animate-blob" />
-        <div className="absolute bottom-[-80px] right-[-60px] w-[360px] h-[360px] rounded-full bg-white/10 blur-2xl animate-blob animation-delay-2000" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between overflow-hidden bg-[#050e09]">
 
-        {/* Logo */}
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl overflow-hidden shadow-xl shadow-black/30 ring-2 ring-white/30">
-            <img src="/favicon.png" alt="ስሙኒ ዋሌት" className="w-full h-full object-cover" />
-          </div>
-          <span className="text-2xl font-black text-white tracking-tight">ስሙኒ ዋሌት</span>
+        {/* Full-panel background image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/simuni.png"
+            alt="ስሙኒ ዋሌት"
+            fill
+            unoptimized
+            priority
+            className="object-cover object-center"
+          />
+          {/* Dark gradient overlays for text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent" />
         </div>
 
-        {/* Illustration */}
-        <div className="relative z-10 flex-1 flex items-center justify-center py-6">
-          <div className="w-full max-w-[460px]"><FinanceIllustration /></div>
+        {/* Logo */}
+        <div className="relative z-10 flex items-center gap-3 p-10">
+          <div className="w-11 h-11 rounded-xl overflow-hidden shadow-xl shadow-black/50 ring-2 ring-white/20">
+            <img src="/favicon.png" alt="ስሙኒ ዋሌት" className="w-full h-full object-cover" />
+          </div>
+          <span className="text-2xl font-black text-white tracking-tight drop-shadow-lg">ስሙኒ ዋሌት</span>
+        </div>
+
+        {/* Floating stat cards — mid panel */}
+        <div className="relative z-10 flex flex-col gap-3 px-10">
+          {/* Card 1 */}
+          <div className="flex items-center gap-3 w-fit px-4 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-xl">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-[10px] text-white/50 uppercase tracking-widest">Saved this month</p>
+              <p className="text-base font-bold text-white">+ETB 13,300</p>
+            </div>
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-2" />
+          </div>
+
+          {/* Card 2 */}
+          <div className="flex items-center gap-3 w-fit px-4 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-xl ml-8">
+            <div className="w-9 h-9 rounded-xl bg-accent/20 flex items-center justify-center">
+              <Brain className="w-4 h-4 text-accent" />
+            </div>
+            <div>
+              <p className="text-[10px] text-white/50 uppercase tracking-widest">AI Insight</p>
+              <p className="text-sm font-semibold text-white">Spending down 18%</p>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="flex items-center gap-3 w-fit px-4 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-xl">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-[10px] text-white/50 uppercase tracking-widest">Savings Rate</p>
+              <p className="text-base font-bold text-white">54.3%</p>
+            </div>
+          </div>
         </div>
 
         {/* Bottom text */}
-        <div className="relative z-10 space-y-5">
+        <div className="relative z-10 space-y-5 p-10">
           <div>
-            <h2 className="text-2xl font-bold text-white leading-snug">Your money, intelligently managed.</h2>
-            <p className="text-white/70 text-sm mt-2">AI insights, real-time tracking, and smart budgeting.</p>
+            <h2 className="text-3xl font-black text-white leading-tight drop-shadow-lg">
+              Your money,<br />intelligently managed.
+            </h2>
+            <p className="text-white/60 text-sm mt-2">AI insights, real-time tracking, and smart budgeting — built for Ethiopia.</p>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-xs text-white/85">
+          <div className="grid grid-cols-2 gap-3 text-xs text-white/75">
             {[
               { icon: TrendingUp, text: 'Real-time analytics' },
               { icon: Sparkles,   text: 'AI powered by Llama 3.3' },
@@ -178,14 +224,14 @@ export default function LoginPage() {
               { icon: Shield,     text: 'Bank-grade privacy' },
             ].map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
                   <Icon className="w-3 h-3 text-white" />
                 </div>
                 <span>{text}</span>
               </div>
             ))}
           </div>
-          <p className="text-white/30 text-xs">© {new Date().getFullYear()} ስሙኒ ዋሌት — Built by Teddy</p>
+          <p className="text-white/25 text-xs">© {new Date().getFullYear()} ስሙኒ ዋሌት — Built by Teddy</p>
         </div>
       </div>
 
