@@ -84,7 +84,7 @@ router.post('/register', async (req, res) => {
 
     const user = await User.create({ name, email, passwordHash, otp, otpExpiry, notifications: [welcomeNotif] });
 
-    // Send OTP email — non-blocking, errors are caught silently
+    // Send OTP email — log errors visibly so we can debug on Render
     sendEmail({
       to: email,
       subject: 'ስሙኒ ዋሌት — Verify Your Email',
@@ -106,7 +106,10 @@ router.post('/register', async (req, res) => {
           </div>
         </div>
       `,
-    }).catch(err => console.error('Register email error:', err.message));
+    }).catch(err => {
+      console.error('❌ Register OTP email failed:', err.message);
+      console.error('MAIL_USER set:', !!process.env.MAIL_USER, '| MAIL_PASS set:', !!process.env.MAIL_PASS);
+    });
 
     return res.status(201).json({
       message: 'Account created. Check your email for the verification code.',
@@ -275,6 +278,7 @@ router.post('/forgot-password', async (req, res) => {
 
     return res.json({ message: 'If that email exists, a reset link has been sent.' });
   } catch (error) {
+    console.error('❌ Forgot password error:', error.message);
     return res.status(500).json({ error: 'Failed to send reset email.' });
   }
 });
