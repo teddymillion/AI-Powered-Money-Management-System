@@ -76,7 +76,8 @@ export const api = {
   markNotificationRead: (id: string) => request(`/profile/notifications/${id}/read`, { method: 'PATCH' }),
   markAllRead:         () => request('/profile/notifications/read-all', { method: 'PATCH' }),
 
-  // Goals
+  deleteAccount: () =>
+    request('/profile/account', { method: 'DELETE' }),
   getGoals:    () => request('/goals'),
   createGoal:  (data: { name: string; target: number; current?: number; icon?: string; deadline?: string }) =>
     request('/goals', { method: 'POST', body: JSON.stringify(data) }),
