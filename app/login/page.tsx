@@ -14,15 +14,15 @@ type Screen = 'login' | 'register' | 'otp' | 'forgot' | 'forgot-sent';
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [screen, setScreen]       = useState<Screen>('login');
-  const [name, setName]           = useState('');
-  const [email, setEmail]         = useState('');
-  const [password, setPassword]   = useState('');
-  const [confirm, setConfirm]     = useState('');
-  const [otp, setOtp]             = useState(['', '', '', '', '', '']);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState<string | null>(null);
-  const [success, setSuccess]     = useState<string | null>(null);
+  const [screen, setScreen]           = useState<Screen>('login');
+  const [name, setName]               = useState('');
+  const [email, setEmail]             = useState('');
+  const [password, setPassword]       = useState('');
+  const [confirm, setConfirm]         = useState('');
+  const [otp, setOtp]                 = useState(['', '', '', '', '', '']);
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [success, setSuccess]         = useState<string | null>(null);
   const [resendTimer, setResendTimer] = useState(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -40,12 +40,11 @@ export default function LoginPage() {
 
   const reset = () => { setError(null); setSuccess(null); };
 
-  // ── Direct login (password only, no OTP) ──────────────────
+  // ── Login ──────────────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); reset();
     setLoading(true);
     try {
-      // Use the existing /auth/login endpoint directly
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,16 +59,14 @@ export default function LoginPage() {
     } finally { setLoading(false); }
   };
 
-  // ── Register → then OTP verify ────────────────────────────
+  // ── Register — creates account + OTP sent in one step ─────
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault(); reset();
     if (password !== confirm) { setError('Passwords do not match.'); return; }
     setLoading(true);
     try {
-      // Register creates the account and sends OTP to email
+      // Backend now handles OTP generation + email sending in /register
       await api.register(name, email, password, confirm);
-      // Now request OTP for first-time verification
-      await api.requestOTP(email, password);
       setScreen('otp');
       setResendTimer(60);
       setOtp(['', '', '', '', '', '']);
@@ -79,7 +76,7 @@ export default function LoginPage() {
     } finally { setLoading(false); }
   };
 
-  // ── Verify OTP (only after register) ──────────────────────
+  // ── Verify OTP ─────────────────────────────────────────────
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault(); reset();
     const code = otp.join('');
@@ -103,16 +100,12 @@ export default function LoginPage() {
     } catch { setError('Failed to resend OTP.'); }
   };
 
-  // ── OTP input: type one digit at a time ───────────────────
+  // ── OTP input helpers ──────────────────────────────────────
   const handleOtpChange = (i: number, val: string) => {
     if (!/^\d*$/.test(val)) return;
-    const next = [...otp];
-    next[i] = val.slice(-1);
-    setOtp(next);
+    const next = [...otp]; next[i] = val.slice(-1); setOtp(next);
     if (val && i < 5) otpRefs.current[i + 1]?.focus();
   };
-
-  // ── OTP paste: fill all 6 boxes at once ───────────────────
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
@@ -120,50 +113,40 @@ export default function LoginPage() {
     const next = ['', '', '', '', '', ''];
     pasted.split('').forEach((ch, i) => { next[i] = ch; });
     setOtp(next);
-    // Focus the next empty box or the last one
-    const focusIdx = Math.min(pasted.length, 5);
-    otpRefs.current[focusIdx]?.focus();
+    otpRefs.current[Math.min(pasted.length, 5)]?.focus();
   };
-
   const handleOtpKeyDown = (i: number, e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && !otp[i] && i > 0) otpRefs.current[i - 1]?.focus();
   };
 
-  // ── Forgot password ────────────────────────────────────────
+  // ── Forgot password — always resolves, never hangs ────────
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault(); reset();
     setLoading(true);
     try {
       await api.forgotPassword(email);
+    } catch {
+      // Silently ignore errors — always show the sent screen
+      // so we don't leak whether an email exists
+    } finally {
+      setLoading(false);
       setScreen('forgot-sent');
-    } catch (err) {
-      setError(err instanceof APIError ? err.message : 'Failed to send reset email.');
-    } finally { setLoading(false); }
+    }
   };
 
   const inputCls = 'w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all text-sm';
 
   return (
     <div className="min-h-screen bg-background flex overflow-hidden">
+
       {/* ── Left panel ── */}
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between overflow-hidden bg-[#050e09]">
-
-        {/* Full-panel background image */}
         <div className="absolute inset-0">
-          <Image
-            src="/simuni.png"
-            alt="ስሙኒ ዋሌት"
-            fill
-            unoptimized
-            priority
-            className="object-cover object-center"
-          />
-          {/* Dark gradient overlays for text legibility */}
+          <Image src="/simuni.png" alt="ስሙኒ ዋሌት" fill unoptimized priority className="object-cover object-center" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent" />
         </div>
 
-        {/* Logo */}
         <div className="relative z-10 flex items-center gap-3 p-10">
           <div className="w-11 h-11 rounded-xl overflow-hidden shadow-xl shadow-black/50 ring-2 ring-white/20">
             <img src="/favicon.png" alt="ስሙኒ ዋሌት" className="w-full h-full object-cover" />
@@ -171,62 +154,31 @@ export default function LoginPage() {
           <span className="text-2xl font-black text-white tracking-tight drop-shadow-lg">ስሙኒ ዋሌት</span>
         </div>
 
-        {/* Floating stat cards — mid panel */}
         <div className="relative z-10 flex flex-col gap-3 px-10">
-          {/* Card 1 */}
           <div className="flex items-center gap-3 w-fit px-4 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-xl">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div>
-              <p className="text-[10px] text-white/50 uppercase tracking-widest">Saved this month</p>
-              <p className="text-base font-bold text-white">+ETB 13,300</p>
-            </div>
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center"><TrendingUp className="w-4 h-4 text-emerald-400" /></div>
+            <div><p className="text-[10px] text-white/50 uppercase tracking-widest">Saved this month</p><p className="text-base font-bold text-white">+ETB 13,300</p></div>
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-2" />
           </div>
-
-          {/* Card 2 */}
           <div className="flex items-center gap-3 w-fit px-4 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-xl ml-8">
-            <div className="w-9 h-9 rounded-xl bg-accent/20 flex items-center justify-center">
-              <Brain className="w-4 h-4 text-accent" />
-            </div>
-            <div>
-              <p className="text-[10px] text-white/50 uppercase tracking-widest">AI Insight</p>
-              <p className="text-sm font-semibold text-white">Spending down 18%</p>
-            </div>
+            <div className="w-9 h-9 rounded-xl bg-accent/20 flex items-center justify-center"><Brain className="w-4 h-4 text-accent" /></div>
+            <div><p className="text-[10px] text-white/50 uppercase tracking-widest">AI Insight</p><p className="text-sm font-semibold text-white">Spending down 18%</p></div>
           </div>
-
-          {/* Card 3 */}
           <div className="flex items-center gap-3 w-fit px-4 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-xl">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-amber-400" />
-            </div>
-            <div>
-              <p className="text-[10px] text-white/50 uppercase tracking-widest">Savings Rate</p>
-              <p className="text-base font-bold text-white">54.3%</p>
-            </div>
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center"><Zap className="w-4 h-4 text-amber-400" /></div>
+            <div><p className="text-[10px] text-white/50 uppercase tracking-widest">Savings Rate</p><p className="text-base font-bold text-white">54.3%</p></div>
           </div>
         </div>
 
-        {/* Bottom text */}
         <div className="relative z-10 space-y-5 p-10">
           <div>
-            <h2 className="text-3xl font-black text-white leading-tight drop-shadow-lg">
-              Your money,<br />intelligently managed.
-            </h2>
+            <h2 className="text-3xl font-black text-white leading-tight drop-shadow-lg">Your money,<br />intelligently managed.</h2>
             <p className="text-white/60 text-sm mt-2">AI insights, real-time tracking, and smart budgeting — built for Ethiopia.</p>
           </div>
           <div className="grid grid-cols-2 gap-3 text-xs text-white/75">
-            {[
-              { icon: TrendingUp, text: 'Real-time analytics' },
-              { icon: Sparkles,   text: 'AI powered by Llama 3.3' },
-              { icon: Shield,     text: 'OTP on first signup' },
-              { icon: Shield,     text: 'Bank-grade privacy' },
-            ].map(({ icon: Icon, text }) => (
+            {[{ icon: TrendingUp, text: 'Real-time analytics' }, { icon: Sparkles, text: 'AI powered by Llama 3.3' }, { icon: Shield, text: 'OTP on first signup' }, { icon: Shield, text: 'Bank-grade privacy' }].map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-3 h-3 text-white" />
-                </div>
+                <div className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0"><Icon className="w-3 h-3 text-white" /></div>
                 <span>{text}</span>
               </div>
             ))}
@@ -323,7 +275,7 @@ export default function LoginPage() {
             </>
           )}
 
-          {/* ── OTP (only shown after register) ── */}
+          {/* ── OTP ── */}
           {screen === 'otp' && (
             <>
               <button onClick={() => { setScreen('register'); reset(); }} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -335,32 +287,18 @@ export default function LoginPage() {
                 </div>
                 <h2 className="text-3xl font-bold text-foreground mb-1">Verify your email</h2>
                 <p className="text-muted-foreground text-sm">
-                  We sent a 6-digit code to <strong className="text-foreground">{email}</strong>.
-                  You can paste it directly.
+                  We sent a 6-digit code to <strong className="text-foreground">{email}</strong>. Check your inbox and paste it below.
                 </p>
               </div>
               <form onSubmit={handleVerifyOTP} className="space-y-6">
                 <div className="flex gap-2 justify-center">
                   {otp.map((digit, i) => (
-                    <input
-                      key={i}
-                      ref={el => { otpRefs.current[i] = el; }}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={e => handleOtpChange(i, e.target.value)}
-                      onKeyDown={e => handleOtpKeyDown(i, e)}
-                      onPaste={handleOtpPaste}
-                      className={`w-12 h-14 text-center text-2xl font-bold rounded-xl bg-secondary border-2 text-foreground focus:outline-none transition-all ${
-                        digit ? 'border-accent ring-2 ring-accent/20' : 'border-border focus:border-accent focus:ring-2 focus:ring-accent/30'
-                      }`}
+                    <input key={i} ref={el => { otpRefs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={digit}
+                      onChange={e => handleOtpChange(i, e.target.value)} onKeyDown={e => handleOtpKeyDown(i, e)} onPaste={handleOtpPaste}
+                      className={`w-12 h-14 text-center text-2xl font-bold rounded-xl bg-secondary border-2 text-foreground focus:outline-none transition-all ${digit ? 'border-accent ring-2 ring-accent/20' : 'border-border focus:border-accent focus:ring-2 focus:ring-accent/30'}`}
                     />
                   ))}
                 </div>
-                <p className="text-center text-xs text-muted-foreground -mt-2">
-                  Tip: Copy the code from your email and paste it here
-                </p>
                 {error   && <div className="flex gap-2 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm"><span>⚠</span><span>{error}</span></div>}
                 {success && <div className="px-4 py-3 rounded-xl bg-accent/10 border border-accent/20 text-accent text-sm">{success}</div>}
                 <button type="submit" disabled={loading || otp.join('').length < 6} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-60 shadow-lg shadow-accent/25">
@@ -409,17 +347,18 @@ export default function LoginPage() {
               <div>
                 <h2 className="text-2xl font-bold text-foreground mb-2">Check your inbox</h2>
                 <p className="text-muted-foreground text-sm">
-                  If <strong className="text-foreground">{email}</strong> exists, a reset link has been sent.
+                  If <strong className="text-foreground">{email}</strong> is registered, a password reset link has been sent.
                 </p>
               </div>
               <p className="text-xs text-muted-foreground bg-secondary rounded-xl px-4 py-3">
-                💡 Check the server console for the reset link (email SMTP not configured yet).
+                Didn't receive it? Check your spam folder or try again in a few minutes.
               </p>
               <button onClick={() => { setScreen('login'); reset(); }} className="flex items-center gap-1.5 text-sm text-accent hover:underline mx-auto">
                 <ArrowLeft className="w-4 h-4" /> Back to sign in
               </button>
             </div>
           )}
+
         </div>
       </div>
     </div>
