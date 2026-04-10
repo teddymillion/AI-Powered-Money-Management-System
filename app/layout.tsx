@@ -4,13 +4,12 @@ import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const _geist = Geist({ subsets: ['latin'] });
+const _geistMono = Geist_Mono({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'ስሙኒ ዋሌት - Personal Finance AI',
-  description: 'Premium personal finance management with AI insights for Ethiopia',
-  generator: 'v0.app',
+  description: 'Premium AI-powered personal finance management built for Ethiopia.',
   viewport: {
     width: 'device-width',
     initialScale: 1,
