@@ -121,6 +121,33 @@ export async function buildSummary(userId, referenceDate = new Date()) {
     });
   }
 
+  // Highest spending day this month
+  const dailyExpenses = await Transaction.aggregate([
+    {
+      $match: {
+        userId: new mongoose.Types.ObjectId(userId),
+        type: 'expense',
+        date: { $gte: monthStart, $lt: monthEnd },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+        total: { $sum: '$amount' },
+      },
+    },
+    { $sort: { total: -1 } },
+    { $limit: 1 },
+  ]);
+
+  const highestSpendingDay = dailyExpenses[0]
+    ? {
+        date: dailyExpenses[0]._id,
+        amount: dailyExpenses[0].total,
+        label: new Date(dailyExpenses[0]._id).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+      }
+    : null;
+
   return {
     month: monthStart.toISOString(),
     income,
@@ -128,6 +155,7 @@ export async function buildSummary(userId, referenceDate = new Date()) {
     savings,
     balance: savings,
     byCategory,
+    highestSpendingDay,
     trends: {
       weekly: weeklyTrends,
       monthly: monthlyTrends,

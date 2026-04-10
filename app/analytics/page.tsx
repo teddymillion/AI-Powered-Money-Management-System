@@ -31,6 +31,7 @@ interface SummaryData {
   expenses: number;
   savings: number;
   balance: number;
+  highestSpendingDay: { date: string; amount: number; label: string } | null;
   byCategory: { category: string; amount: number; percentage: number }[];
   trends: Record<ViewType, { period: string; income: number; expenses: number; savings: number }[]>;
 }
@@ -236,8 +237,12 @@ export default function AnalyticsPage() {
             },
             {
               label: 'Highest Spending Day',
-              value: 'Coming soon',
-              subtext: 'We are calculating this from your activity',
+              value: loading
+                ? 'Calculating...'
+                : summary?.highestSpendingDay
+                  ? `ETB ${summary.highestSpendingDay.amount.toLocaleString()}`
+                  : 'No data yet',
+              trend: summary?.highestSpendingDay?.label || undefined,
             },
             {
               label: 'Savings Rate',
@@ -256,11 +261,8 @@ export default function AnalyticsPage() {
                   </p>
                   {stat.trend && (
                     <p className="text-xs text-emerald-400 font-medium">
-                      {stat.trend} from this month
+                      {stat.trend}
                     </p>
-                  )}
-                  {stat.subtext && (
-                    <p className="text-xs text-muted-foreground">{stat.subtext}</p>
                   )}
                 </CardContent>
               </Card>
