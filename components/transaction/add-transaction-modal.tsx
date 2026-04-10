@@ -1,151 +1,145 @@
 'use client';
 
-import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Plus } from 'lucide-react';
-import { CATEGORIES } from '@/lib/mock-data';
+import { useMemo, useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plus, X } from 'lucide-react';
+import { CATEGORIES } from '@/lib/categories';
+import { api, APIError } from '@/lib/api';
 
-interface AddTransactionModalProps {
-  onClose?: () => void;
-}
+export function AddTransactionModal({ onClose }: { onClose?: () => void }) {
+  const [open, setOpen]           = useState(false);
+  const [type, setType]           = useState<'income'|'expense'>('expense');
+  const [category, setCategory]   = useState(CATEGORIES.find(c=>c.type==='expense')?.id || CATEGORIES[0].id);
+  const [amount, setAmount]       = useState('');
+  const [description, setDesc]    = useState('');
+  const [date, setDate]           = useState(new Date().toISOString().split('T')[0]);
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState<string|null>(null);
 
-export function AddTransactionModal({ onClose }: AddTransactionModalProps) {
-  const [open, setOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0].id);
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const visible = useMemo(() => CATEGORIES.filter(c => !c.type || c.type === type), [type]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const reset = () => { setAmount(''); setDesc(''); setDate(new Date().toISOString().split('T')[0]); setError(null); };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would submit to an API
-    console.log({
-      category: selectedCategory,
-      amount: parseFloat(amount),
-      description,
-      date,
-    });
-    setOpen(false);
-    setAmount('');
-    setDescription('');
-    setDate(new Date().toISOString().split('T')[0]);
-    setSelectedCategory(CATEGORIES[0].id);
+    if (!amount || Number(amount) <= 0) { setError('Enter a valid amount.'); return; }
+    setLoading(true); setError(null);
+    try {
+      await api.addTransaction({ type, category, amount: Number(amount), description, date });
+      setOpen(false); reset();
+      window.dispatchEvent(new CustomEvent('transactions:updated'));
+      onClose?.();
+    } catch (err) {
+      setError(err instanceof APIError ? err.message : 'Unable to save transaction.');
+    } finally { setLoading(false); }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
+        <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent text-accent-foreground text-sm font-semibold hover:bg-accent/90 active:scale-95 transition-all shadow-md shadow-accent/20">
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">Add Transaction</span>
           <span className="sm:hidden">Add</span>
-        </Button>
+        </button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[425px] border-border/30 bg-card">
-        <DialogHeader>
-          <DialogTitle className="text-foreground">Add Transaction</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            Record a new transaction to track your spending
-          </DialogDescription>
+      <DialogContent className="sm:max-w-md border-border bg-card rounded-2xl p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+          <DialogTitle className="text-base font-semibold text-foreground">New Transaction</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+          {/* Type toggle */}
+          <div className="flex p-1 bg-secondary rounded-xl">
+            {(['expense','income'] as const).map(v => (
+              <button key={v} type="button" onClick={() => {
+                setType(v);
+                const first = CATEGORIES.find(c => !c.type || c.type === v);
+                if (first) setCategory(first.id);
+              }}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                  type === v ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {v === 'expense' ? '↓ Expense' : '↑ Income'}
+              </button>
+            ))}
+          </div>
+
           {/* Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="amount" className="text-foreground">
-              Amount (ETB)
-            </Label>
-            <Input
-              id="amount"
-              type="number"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-              className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
-            />
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount (ETB)</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">ETB</span>
+              <input
+                type="number" min="0.01" step="0.01" placeholder="0.00"
+                value={amount} onChange={e => setAmount(e.target.value)} required
+                className="w-full pl-14 pr-4 py-3 bg-secondary border border-border rounded-xl text-lg font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all"
+              />
+            </div>
           </div>
 
           {/* Category */}
-          <div className="space-y-3">
-            <Label className="text-foreground">Category</Label>
-            <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto">
-              {CATEGORIES.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`p-3 rounded-lg border transition-all flex items-center gap-2 ${
-                    selectedCategory === category.id
-                      ? 'border-accent bg-accent/10'
-                      : 'border-border/30 bg-secondary hover:border-border/50'
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</label>
+            <div className="grid grid-cols-3 gap-2 max-h-44 overflow-y-auto scrollbar-thin pr-1">
+              {visible.map(cat => (
+                <button key={cat.id} type="button" onClick={() => setCategory(cat.id)}
+                  className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border text-center transition-all duration-150 ${
+                    category === cat.id
+                      ? 'border-accent bg-accent/10 text-foreground'
+                      : 'border-border bg-secondary text-muted-foreground hover:border-border/80 hover:text-foreground'
                   }`}
                 >
-                  <span className="text-lg">{category.icon}</span>
-                  <span className="text-sm font-medium text-foreground truncate">
-                    {category.label}
-                  </span>
+                  <span className="text-xl">{cat.icon}</span>
+                  <span className="text-[10px] font-medium leading-tight">{cat.label}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-foreground">
-              Description
-            </Label>
-            <Input
-              id="description"
-              placeholder="What did you spend on?"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Description <span className="normal-case font-normal">(optional)</span>
+            </label>
+            <input
+              placeholder="What was this for?"
+              value={description} onChange={e => setDesc(e.target.value)}
+              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all"
             />
           </div>
 
           {/* Date */}
-          <div className="space-y-2">
-            <Label htmlFor="date" className="text-foreground">
-              Date
-            </Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="bg-secondary border-border text-foreground"
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</label>
+            <input
+              type="date" value={date} onChange={e => setDate(e.target.value)}
+              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all"
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              className="flex-1 border-border hover:bg-secondary"
-            >
+          {error && (
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs">
+              <X className="w-3.5 h-3.5 flex-shrink-0" /> {error}
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={() => setOpen(false)} disabled={loading}
+              className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-secondary transition-all">
               Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"
-              disabled={!amount || !description}
-            >
-              Add Transaction
-            </Button>
+            </button>
+            <button type="submit" disabled={!amount || loading}
+              className="flex-1 py-2.5 rounded-xl bg-accent text-accent-foreground text-sm font-semibold hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-md shadow-accent/20">
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-3.5 h-3.5 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" />
+                  Saving...
+                </span>
+              ) : 'Save Transaction'}
+            </button>
           </div>
         </form>
       </DialogContent>

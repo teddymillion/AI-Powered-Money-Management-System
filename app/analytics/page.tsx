@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,39 +18,58 @@ import {
   Area,
   AreaChart,
 } from 'recharts';
-import { MONTHLY_TRENDS } from '@/lib/mock-data';
-import { Calendar, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
+import { api, APIError } from '@/lib/api';
+import { buildCategorySpending } from '@/lib/finance';
 
 type ViewType = 'weekly' | 'monthly' | 'yearly';
 
-// Extended mock data for different views
-const EXTENDED_TRENDS = {
-  weekly: [
-    { period: 'Week 1', income: 3500, expenses: 2000, savings: 1500 },
-    { period: 'Week 2', income: 3500, expenses: 2100, savings: 1400 },
-    { period: 'Week 3', income: 3500, expenses: 2200, savings: 1300 },
-    { period: 'Week 4', income: 3500, expenses: 2300, savings: 1200 },
-  ],
-  monthly: MONTHLY_TRENDS,
-  yearly: [
-    { period: 'Q1', income: 45000, expenses: 26400, savings: 18600 },
-    { period: 'Q2', income: 48000, expenses: 27600, savings: 20400 },
-  ],
-};
-
-const CATEGORY_BREAKDOWN = [
-  { category: 'Rent', value: 3500 },
-  { category: 'Food', value: 1200 },
-  { category: 'Transport', value: 850 },
-  { category: 'Utilities', value: 800 },
-  { category: 'Entertainment', value: 500 },
-  { category: 'Healthcare', value: 600 },
-  { category: 'Education', value: 2000 },
-  { category: 'Other', value: 650 },
-];
+interface SummaryData {
+  income: number;
+  expenses: number;
+  savings: number;
+  balance: number;
+  byCategory: { category: string; amount: number; percentage: number }[];
+  trends: Record<ViewType, { period: string; income: number; expenses: number; savings: number }[]>;
+}
 
 export default function AnalyticsPage() {
   const [viewType, setViewType] = useState<ViewType>('monthly');
+  const [summary, setSummary] = useState<SummaryData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    setError(null);
+
+    api
+      .getSummary()
+      .then((data) => {
+        if (!mounted) return;
+        setSummary(data as SummaryData);
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        const message = err instanceof APIError ? err.message : 'Unable to load analytics.';
+        setError(message);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const trendData = summary?.trends[viewType] || [];
+  const categoryData = useMemo(() => {
+    if (!summary) return [];
+    return buildCategorySpending(summary.byCategory);
+  }, [summary]);
 
   return (
     <DashboardLayout>
@@ -67,6 +86,12 @@ export default function AnalyticsPage() {
             Detailed insights into your financial performance
           </p>
         </div>
+
+        {error && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {error}
+          </div>
+        )}
 
         {/* View Toggle */}
         <div className="flex gap-2 p-1 bg-secondary/30 rounded-lg w-fit">
@@ -94,51 +119,55 @@ export default function AnalyticsPage() {
             <p className="text-sm text-muted-foreground mb-6">
               Compare your income and spending patterns
             </p>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={EXTENDED_TRENDS[viewType]}>
-                <defs>
-                  <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-                <XAxis
-                  dataKey="period"
-                  stroke="rgba(148, 163, 184, 0.5)"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(15, 17, 23, 0.9)',
-                    border: '1px solid rgba(148, 163, 184, 0.3)',
-                    borderRadius: '8px',
-                    color: '#f5f5f5',
-                  }}
-                  formatter={(value: number) => `ETB ${value.toLocaleString()}`}
-                />
-                <Legend />
-                <Area
-                  type="monotone"
-                  dataKey="income"
-                  stroke="#10b981"
-                  fillOpacity={1}
-                  fill="url(#colorIncome)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="expenses"
-                  stroke="#ef4444"
-                  fillOpacity={1}
-                  fill="url(#colorExpenses)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="text-sm text-muted-foreground">Loading trends...</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
+                  <XAxis
+                    dataKey="period"
+                    stroke="rgba(148, 163, 184, 0.5)"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(15, 17, 23, 0.9)',
+                      border: '1px solid rgba(148, 163, 184, 0.3)',
+                      borderRadius: '8px',
+                      color: '#f5f5f5',
+                    }}
+                    formatter={(value: number) => `ETB ${value.toLocaleString()}`}
+                  />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="income"
+                    stroke="#10b981"
+                    fillOpacity={1}
+                    fill="url(#colorIncome)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="expenses"
+                    stroke="#ef4444"
+                    fillOpacity={1}
+                    fill="url(#colorExpenses)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
 
@@ -151,34 +180,38 @@ export default function AnalyticsPage() {
             <p className="text-sm text-muted-foreground mb-6">
               Track your savings growth over time
             </p>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={EXTENDED_TRENDS[viewType]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-                <XAxis
-                  dataKey="period"
-                  stroke="rgba(148, 163, 184, 0.5)"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(15, 17, 23, 0.9)',
-                    border: '1px solid rgba(148, 163, 184, 0.3)',
-                    borderRadius: '8px',
-                    color: '#f5f5f5',
-                  }}
-                  formatter={(value: number) => `ETB ${value.toLocaleString()}`}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="savings"
-                  stroke="#10b981"
-                  strokeWidth={3}
-                  dot={{ fill: '#10b981', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="text-sm text-muted-foreground">Loading trends...</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
+                  <XAxis
+                    dataKey="period"
+                    stroke="rgba(148, 163, 184, 0.5)"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(15, 17, 23, 0.9)',
+                      border: '1px solid rgba(148, 163, 184, 0.3)',
+                      borderRadius: '8px',
+                      color: '#f5f5f5',
+                    }}
+                    formatter={(value: number) => `ETB ${value.toLocaleString()}`}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="savings"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    dot={{ fill: '#10b981', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
 
@@ -191,30 +224,34 @@ export default function AnalyticsPage() {
             <p className="text-sm text-muted-foreground mb-6">
               See where your money is going
             </p>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={CATEGORY_BREAKDOWN}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-                <XAxis
-                  dataKey="category"
-                  stroke="rgba(148, 163, 184, 0.5)"
-                  style={{ fontSize: '12px' }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(15, 17, 23, 0.9)',
-                    border: '1px solid rgba(148, 163, 184, 0.3)',
-                    borderRadius: '8px',
-                    color: '#f5f5f5',
-                  }}
-                  formatter={(value: number) => `ETB ${value.toLocaleString()}`}
-                />
-                <Bar dataKey="value" fill="#10b981" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="text-sm text-muted-foreground">Loading categories...</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={categoryData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
+                  <XAxis
+                    dataKey="category"
+                    stroke="rgba(148, 163, 184, 0.5)"
+                    style={{ fontSize: '12px' }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis stroke="rgba(148, 163, 184, 0.5)" style={{ fontSize: '12px' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(15, 17, 23, 0.9)',
+                      border: '1px solid rgba(148, 163, 184, 0.3)',
+                      borderRadius: '8px',
+                      color: '#f5f5f5',
+                    }}
+                    formatter={(value: number) => `ETB ${value.toLocaleString()}`}
+                  />
+                  <Bar dataKey="amount" fill="#10b981" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
 
@@ -223,18 +260,18 @@ export default function AnalyticsPage() {
           {[
             {
               label: 'Average Monthly Expense',
-              value: 'ETB 8,925',
-              trend: '+2.1%',
+              value: `ETB ${summary?.expenses?.toLocaleString() || 0}`,
+              trend: summary ? `${((summary.expenses / (summary.income || 1)) * 100).toFixed(1)}%` : '0%',
             },
             {
               label: 'Highest Spending Day',
-              value: 'March 15',
-              subtext: 'ETB 450 spent',
+              value: 'Coming soon',
+              subtext: 'We are calculating this from your activity',
             },
             {
               label: 'Savings Rate',
-              value: '39%',
-              trend: '+3.5%',
+              value: summary ? `${((summary.savings / (summary.income || 1)) * 100).toFixed(1)}%` : '0%',
+              trend: 'Tracking',
             },
           ].map((stat, index) => (
             <Card
@@ -253,7 +290,7 @@ export default function AnalyticsPage() {
                 </p>
                 {stat.trend && (
                   <p className="text-xs text-green-400 font-medium">
-                    {stat.trend} from last month
+                    {stat.trend} from this month
                   </p>
                 )}
                 {stat.subtext && (
