@@ -2,12 +2,91 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Sparkles, TrendingUp, Shield, Zap, BarChart3, Target,
   MessageSquare, ArrowRight, Check, Star, ChevronDown,
-  Globe, Lock, Brain, PieChart, Bell, Users,
+  Globe, Lock, Brain, PieChart, Bell, Users, LogOut, LayoutDashboard,
 } from 'lucide-react';
 import { FinanceIllustration } from '@/components/finance-illustration';
+import { useAuth } from '@/lib/auth-context';
+
+function NeuralBackground() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId: number;
+    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const NODE_COUNT = 60;
+    const CONNECT_DIST = 130;
+    type Node = { x: number; y: number; vx: number; vy: number; pulse: number };
+    const nodes: Node[] = Array.from({ length: NODE_COUNT }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      pulse: Math.random() * Math.PI * 2,
+    }));
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Connections
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < CONNECT_DIST) {
+            const alpha = (1 - dist / CONNECT_DIST) * 0.35;
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(52, 211, 153, ${alpha})`;
+            ctx.lineWidth = 0.8;
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Nodes
+      nodes.forEach(n => {
+        n.pulse += 0.03;
+        const r = 2.5 + Math.sin(n.pulse) * 1;
+        const glow = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 4);
+        glow.addColorStop(0, 'rgba(52,211,153,0.9)');
+        glow.addColorStop(1, 'rgba(52,211,153,0)');
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r * 4, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(52,211,153,0.95)';
+        ctx.fill();
+
+        n.x += n.vx;
+        n.y += n.vy;
+        if (n.x < 0 || n.x > canvas.width)  n.vx *= -1;
+        if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+      });
+
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
+}
 
 const FEATURES = [
   { icon: Brain,       title: 'AI-Powered Insights',     desc: 'Llama 3.3 analyses your spending patterns and delivers personalised financial recommendations in real time.' },
@@ -39,6 +118,9 @@ function CountUp({ target, suffix = '' }: { target: string; suffix?: string }) {
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const { user, logout, isLoading } = useAuth();
 
   useEffect(() => {
     const stored = localStorage.getItem('theme');
@@ -48,31 +130,105 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
 
       {/* ── Navbar ── */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-background/90 backdrop-blur-xl border-b border-border shadow-sm' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+
+          {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-lg shadow-accent/30">
-              <Zap className="w-4 h-4 text-accent-foreground" />
-            </div>
+            <Image src="/favicon.png" alt="ስሙኒ ዋሌት" width={36} height={36} className="rounded-xl" />
             <span className="text-lg font-bold text-foreground">ስሙኒ ዋሌት</span>
           </div>
+
+          {/* Nav links */}
           <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#how" className="hover:text-foreground transition-colors">How it works</a>
             <a href="#testimonials" className="hover:text-foreground transition-colors">Reviews</a>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
-              Sign In
-            </Link>
-            <Link href="/login" className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-accent-foreground text-sm font-semibold hover:bg-accent/90 transition-all shadow-md shadow-accent/20">
-              Get Started <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+
+          {/* Right side — auth-aware */}
+          {!isLoading && (
+            <div className="flex items-center gap-3">
+              {user ? (
+                /* ── Logged-in state ── */
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setMenuOpen(o => !o)}
+                    className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-border hover:bg-secondary transition-all"
+                  >
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar.startsWith('http') ? user.avatar : `http://localhost:4000${user.avatar}`}
+                        alt={user.name}
+                        className="w-7 h-7 rounded-lg object-cover"
+                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center text-[11px] font-bold text-accent-foreground">
+                        {user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="hidden sm:block text-left">
+                      <p className="text-xs font-semibold text-foreground leading-none">{user.name.split(' ')[0]}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Logged in</p>
+                    </div>
+                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                  </button>
+
+                  {menuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-border bg-card shadow-xl py-1 z-50">
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-accent" /> Dashboard
+                      </Link>
+                      <Link
+                        href="/profile"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <div className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[9px] font-bold text-accent">
+                          {user.name[0].toUpperCase()}
+                        </div>
+                        Profile
+                      </Link>
+                      <div className="my-1 border-t border-border" />
+                      <button
+                        onClick={() => { logout(); setMenuOpen(false); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" /> Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* ── Guest state ── */
+                <>
+                  <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
+                    Sign In
+                  </Link>
+                  <Link href="/login" className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-accent-foreground text-sm font-semibold hover:bg-accent/90 transition-all shadow-md shadow-accent/20">
+                    Get Started <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </nav>
 
@@ -151,6 +307,82 @@ export default function LandingPage() {
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-muted-foreground animate-bounce">
           <span className="text-xs">Scroll to explore</span>
           <ChevronDown className="w-4 h-4" />
+        </div>
+      </section>
+
+      {/* ── Advertisement Banner ── */}
+      <section className="w-full bg-[#020d0a]">
+
+        {/* Image — full width, full quality, no crop */}
+        <div className="w-full">
+          <Image
+            src="/simuni wallet.png"
+            alt="ስሙኒ ዋሌት"
+            width={1151}
+            height={488}
+            priority
+            unoptimized
+            className="w-full h-auto block"
+          />
+        </div>
+
+        {/* Neural network text panel */}
+        <div className="relative overflow-hidden">
+          {/* Animated neural canvas */}
+          <NeuralBackground />
+
+          {/* Deep gradient base so canvas blends with image above */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#020d0a] via-[#041a10] to-[#020d0a]" />
+
+          {/* Radial accent glow behind text */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_70%_at_50%_50%,rgba(52,211,153,0.07),transparent)]" />
+
+          {/* Content */}
+          <div className="relative z-10 px-6 py-14 flex flex-col items-center text-center gap-6">
+
+            {/* Eyebrow */}
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/5 backdrop-blur-sm">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-emerald-400/80 text-[11px] font-semibold uppercase tracking-[0.2em]">ስሙኒ ዋሌት · Official</span>
+            </div>
+
+            {/* Tagline */}
+            <div className="space-y-3 max-w-2xl">
+              <p className="text-white/40 text-base sm:text-lg font-light tracking-wide">
+                ባዶነት ወጪን ካለማወቅ ይጀምራል፤
+              </p>
+              <p className="text-white text-4xl sm:text-6xl font-black tracking-tight leading-none drop-shadow-[0_0_30px_rgba(52,211,153,0.3)]">
+                ስሙኒ ዋሌት
+              </p>
+              <p className="text-emerald-400 text-xl sm:text-3xl font-bold tracking-wide">
+                ዘመናዊው የወጪዎ መሪ!
+              </p>
+            </div>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 w-52">
+              <div className="flex-1 h-px bg-emerald-500/20" />
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="flex-1 h-px bg-emerald-500/20" />
+            </div>
+
+            {/* CTA */}
+            <Link
+              href="/login"
+              className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(52,211,153,0.35)] hover:shadow-[0_0_45px_rgba(52,211,153,0.5)] hover:-translate-y-0.5"
+            >
+              ይጀምሩ — ነፃ ነው <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            {/* Trust badges */}
+            <div className="flex flex-wrap items-center justify-center gap-6 pt-1">
+              {['AI-Powered', 'ETB Native', 'Bank-Grade Security', 'Free to Start'].map(tag => (
+                <div key={tag} className="flex items-center gap-1.5 text-white/30 text-[11px] font-semibold uppercase tracking-widest">
+                  <Check className="w-3 h-3 text-emerald-500" /> {tag}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -279,9 +511,7 @@ export default function LandingPage() {
             {/* Brand */}
             <div className="md:col-span-2 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-lg shadow-accent/30">
-                  <Zap className="w-5 h-5 text-accent-foreground" />
-                </div>
+                <Image src="/favicon.png" alt="ስሙኒ ዋሌት" width={40} height={40} className="rounded-xl" />
                 <div>
                   <p className="text-lg font-bold text-foreground">ስሙኒ ዋሌት</p>
                   <p className="text-xs text-muted-foreground">AI-Powered Money Management</p>
@@ -313,21 +543,65 @@ export default function LandingPage() {
             <div className="space-y-4">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Company</p>
               <div className="space-y-2.5">
-                {['About', 'Privacy Policy', 'Terms of Service', 'Contact', 'Support'].map(item => (
-                  <a key={item} href="#" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">{item}</a>
-                ))}
+                <Link href="/about" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">About</Link>
+                <Link href="/terms" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
+                <a href="mailto:tedrosmilion19@gmail.com" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+                <a href="https://t.me/Lataxv72" target="_blank" rel="noopener noreferrer" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">Support</a>
               </div>
             </div>
           </div>
 
-          {/* Bottom bar */}
-          <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-muted-foreground">
-              © 2025 ስሙኒ ዋሌት. Built with ❤️ in Ethiopia. All rights reserved.
-            </p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              All systems operational
+          {/* Contact row */}
+          <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-6">
+            {/* Social / contact links */}
+            <div className="flex flex-wrap items-center gap-5">
+              {/* Telegram */}
+              <a
+                href="https://t.me/Lataxv7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+              >
+                <svg className="w-4 h-4 text-[#2AABEE] group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 13.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z"/>
+                </svg>
+                @Lataxv7
+              </a>
+
+              {/* Phone */}
+              <a
+                href="tel:+251947134309"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+              >
+                <svg className="w-4 h-4 text-accent group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+                </svg>
+                +251 947 134 309
+              </a>
+
+              {/* GitHub */}
+              <a
+                href="https://github.com/teddymillion"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+              >
+                <svg className="w-4 h-4 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+                </svg>
+                teddymillion
+              </a>
+            </div>
+
+            {/* Copyright + status */}
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <p className="text-xs text-muted-foreground">
+                © {new Date().getFullYear()} ስሙኒ ዋሌት. Built with ❤️ in Ethiopia by Teddy.
+              </p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                All systems operational
+              </div>
             </div>
           </div>
         </div>
