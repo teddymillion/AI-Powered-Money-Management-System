@@ -5,8 +5,17 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { User } from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
+import { pushNotification } from '../utils/notificationBus.js';
 
 const router = Router();
+
+// Helper — persist + push a notification
+async function sendNotification(userId, notif) {
+  await User.findByIdAndUpdate(userId, {
+    $push: { notifications: { $each: [notif], $position: 0 } },
+  });
+  pushNotification(userId, notif);
+}
 
 // ── Nodemailer transporter (Gmail) ─────────────────────────
 function createTransporter() {
@@ -62,7 +71,15 @@ router.post('/register', async (req, res) => {
     if (existing) return res.status(409).json({ error: 'Email already in use.' });
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, passwordHash });
+    const welcomeNotif = {
+      id: `welcome-${Date.now()}`,
+      title: '🎉 Welcome to ስሙኒ ዋሌት!',
+      message: `Hi ${name.split(' ')[0]}! Your account is ready. Start by adding your first transaction.`,
+      type: 'success',
+      read: false,
+      createdAt: new Date(),
+    };
+    const user = await User.create({ name, email, passwordHash, notifications: [welcomeNotif] });
     const token = signToken(user);
 
     return res.status(201).json({
@@ -165,6 +182,17 @@ router.post('/login/verify-otp', async (req, res) => {
     user.otp = null;
     user.otpExpiry = null;
     await user.save();
+
+    // Push a sign-in notification
+    const loginNotif = {
+      id: `login-${Date.now()}`,
+      title: '🔑 New Sign-In Detected',
+      message: `Welcome back, ${user.name.split(' ')[0]}! You signed in successfully at ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}.`,
+      type: 'info',
+      read: false,
+      createdAt: new Date(),
+    };
+    await sendNotification(user._id, loginNotif);
 
     const token = signToken(user);
     return res.json({
