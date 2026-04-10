@@ -126,4 +126,62 @@ router.patch('/notifications/read-all', async (req, res) => {
   }
 });
 
+// ── Real-time notifications via SSE ──────────────────────
+// Map of userId -> res (SSE response)
+const sseClients = new Map();
+
+export function pushNotification(userId, notification) {
+  const client = sseClients.get(String(userId));
+  if (client) {
+    client.write(`data: ${JSON.stringify(notification)}\n\n`);
+  }
+}
+
+router.get('/notifications/stream', async (req, res) => {
+  // EventSource can't send headers — accept token via query param
+  const token = req.query.token;
+  if (!token) return res.status(401).json({ error: 'Missing token.' });
+
+  let userId;
+  try {
+    const { default: jwt } = await import('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    userId = String(decoded.sub);
+  } catch {
+    return res.status(401).json({ error: 'Invalid token.' });
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  sseClients.set(userId, res);
+
+  // Heartbeat every 25s to keep connection alive through proxies
+  const heartbeat = setInterval(() => res.write(': heartbeat\n\n'), 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClients.delete(userId);
+  });
+});
+
+// ── Delete account ────────────────────────────────────────
+router.delete('/account', async (req, res) => {
+  try {
+    const { Transaction } = await import('../models/Transaction.js');
+    const { Goal }        = await import('../models/Goal.js');
+    await Promise.all([
+      Transaction.deleteMany({ userId: req.user.id }),
+      Goal.deleteMany({ userId: req.user.id }),
+      User.findByIdAndDelete(req.user.id),
+    ]);
+    return res.json({ message: 'Account deleted successfully.' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    return res.status(500).json({ error: 'Failed to delete account.' });
+  }
+});
+
 export default router;
