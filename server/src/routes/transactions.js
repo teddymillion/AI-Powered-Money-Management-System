@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { Transaction } from '../models/Transaction.js';
+import { User } from '../models/User.js';
+import { pushNotification } from './profile.js';
 
 const router = Router();
 
@@ -19,6 +21,18 @@ router.post('/', async (req, res) => {
       description: description || '',
       date: new Date(date),
     });
+
+    // Build and persist notification
+    const notif = {
+      id: transaction._id.toString(),
+      title: type === 'income' ? '💰 Income Added' : '💸 Expense Recorded',
+      message: `${category} — ETB ${Number(amount).toLocaleString()}${description ? ` · ${description}` : ''}`,
+      type: type === 'income' ? 'success' : 'info',
+      read: false,
+      createdAt: new Date(),
+    };
+    await User.findByIdAndUpdate(req.user.id, { $push: { notifications: { $each: [notif], $position: 0 } } });
+    pushNotification(req.user.id, notif);
 
     return res.status(201).json(transaction);
   } catch (error) {
