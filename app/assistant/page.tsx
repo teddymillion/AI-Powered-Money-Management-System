@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Send, Sparkles, Wifi } from 'lucide-react';
 import { api, APIError } from '@/lib/api';
@@ -10,19 +11,27 @@ import { useLang } from '@/lib/language-context';
 interface Message { id: string; role: 'user' | 'assistant'; content: string; isError?: boolean; }
 
 export default function AssistantPage() {
+  return (
+    <Suspense fallback={null}>
+      <AssistantInner />
+    </Suspense>
+  );
+}
+
+function AssistantInner() {
   const { user } = useAuth();
   const { t } = useLang();
+  const searchParams = useSearchParams();
 
   const [messages, setMessages] = useState<Message[]>([{
     id: '1', role: 'assistant', content: t('aiWelcome'),
   }]);
-  const [input, setInput]   = useState('');
+  const [input, setInput]     = useState('');
   const [loading, setLoading] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
+  const endRef    = useRef<HTMLDivElement>(null);
+  const sentRef   = useRef(false); // prevent double-send in StrictMode
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-
-  const PROMPTS = [t('prompt1'), t('prompt2'), t('prompt3'), t('prompt4')];
 
   const send = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -38,6 +47,17 @@ export default function AssistantPage() {
     } finally { setLoading(false); }
   };
 
+  // Auto-send insight query from URL param
+  useEffect(() => {
+    const insight = searchParams.get('insight');
+    if (insight && !sentRef.current) {
+      sentRef.current = true;
+      send(insight);
+    }
+  }, [searchParams]);
+
+  const PROMPTS = [t('prompt1'), t('prompt2'), t('prompt3'), t('prompt4')];
+  const hasInsight = !!searchParams.get('insight');
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
 
   return (
@@ -89,7 +109,7 @@ export default function AssistantPage() {
             <div ref={endRef} />
           </div>
 
-          {messages.length === 1 && !loading && (
+          {messages.length === 1 && !loading && !hasInsight && (
             <div className="px-5 py-3 border-t border-border bg-secondary/30">
               <p className="text-[11px] text-muted-foreground font-medium mb-2">{t('suggestedQuestions')}</p>
               <div className="flex flex-wrap gap-2">

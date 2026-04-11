@@ -92,9 +92,10 @@ export function AIInsightCard({ insights, loading = false, highlight = false }: 
         {insights.slice(0, 3).map((insight, i) => {
           const cfg   = PRIORITY_CONFIG[insight.priority] || PRIORITY_CONFIG.low;
           const PIcon = cfg.icon;
+          const query = encodeURIComponent(`Tell me more about this insight: "${insight.title}" — ${insight.description}. Give me detailed, actionable advice based on my financial data.`);
           return (
             <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, duration: 0.35 }}>
-              <Card onClick={() => router.push('/assistant')}
+              <Card onClick={() => router.push(`/assistant?insight=${query}`)}
                 className={`group relative rounded-2xl border ${cfg.border} bg-card/80 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer overflow-hidden`}>
                 <div className={`absolute inset-0 ${cfg.bg} opacity-40`} />
                 <CardHeader className="relative pb-2">
