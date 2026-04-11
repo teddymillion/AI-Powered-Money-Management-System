@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { Sparkles, ArrowRight, ChevronDown, Check, TrendingUp } from 'lucide-react';
+import { Sparkles, ArrowRight, ChevronDown, Check, TrendingUp, LayoutDashboard } from 'lucide-react';
 import { useLang } from '@/lib/language-context';
+import { useAuth } from '@/lib/auth-context';
 import { FinanceIllustration } from './finance-illustration';
 
 export function LandingHero() {
   const { t } = useLang();
+  const { user } = useAuth();
 
   return (
     <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
@@ -35,21 +37,29 @@ export function LandingHero() {
           </div>
 
           <div className="flex flex-wrap gap-4">
-            <Link href="/login" className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-accent text-accent-foreground font-semibold hover:bg-accent/90 transition-all shadow-xl shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5">
-              {t('startForFree')} <ArrowRight className="w-4 h-4" />
-            </Link>
+            {user ? (
+              <Link href="/dashboard" className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-accent text-accent-foreground font-semibold hover:bg-accent/90 transition-all shadow-xl shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5">
+                <LayoutDashboard className="w-4 h-4" /> {t('dashboard')}
+              </Link>
+            ) : (
+              <Link href="/login" className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-accent text-accent-foreground font-semibold hover:bg-accent/90 transition-all shadow-xl shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5">
+                {t('startForFree')} <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
             <a href="#features" className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-border text-foreground font-semibold hover:bg-secondary transition-all">
               {t('seeFeatures')} <ChevronDown className="w-4 h-4" />
             </a>
           </div>
 
-          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
-            {[t('noCreditCard'), t('freeForever'), t('setupIn2Min')].map(text => (
-              <div key={text} className="flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-accent" /> {text}
-              </div>
-            ))}
-          </div>
+          {!user && (
+            <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
+              {[t('noCreditCard'), t('freeForever'), t('setupIn2Min')].map(text => (
+                <div key={text} className="flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-accent" /> {text}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Right — illustration */}
