@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
-import { Resend } from 'resend';
 import { User } from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 import { pushNotification } from '../utils/notificationBus.js';
@@ -18,51 +17,29 @@ async function sendNotification(userId, notif) {
   pushNotification(userId, notif);
 }
 
-// ── Email sender: Gmail SMTP (works for all recipients) ──
+// ── Email sender: Gmail SMTP only ──────────────────────────
 async function sendEmail({ to, subject, html }) {
-  // Try Resend first if configured
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const result = await resend.emails.send({
-        from: 'ስሙኒ ዋሌት <onboarding@resend.dev>',
-        to,
-        subject,
-        html,
-      });
-      // Resend free tier blocks sending to unverified emails
-      // If it errors with 'not verified', fall through to Gmail
-      if (result?.error) throw new Error(result.error.message || 'Resend blocked');
-      console.log('✅ Email sent via Resend to', to);
-      return;
-    } catch (err) {
-      console.error('❌ Resend failed:', err.message, '| trying Gmail...');
-    }
+  if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+    console.log(`📧 [EMAIL NOT CONFIGURED] TO: ${to}`);
+    throw new Error('Email not configured');
   }
-
-  // Gmail SMTP — works for ALL recipients, no domain verification needed
-  if (process.env.MAIL_USER && process.env.MAIL_PASS) {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-      },
-    });
-    await transporter.sendMail({
-      from: `"ስሙኒ ዋሌት" <${process.env.MAIL_USER}>`,
-      to,
-      subject,
-      html,
-    });
-    console.log('✅ Email sent via Gmail to', to);
-    return;
-  }
-
-  console.log(`📧 [EMAIL NOT CONFIGURED] TO: ${to}`);
-  throw new Error('No email provider configured');
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASS,
+    },
+    tls: { rejectUnauthorized: false },
+  });
+  await transporter.sendMail({
+    from: `"ስሙኒ ዋሌት" <${process.env.MAIL_USER}>`,
+    to,
+    subject,
+    html,
+  });
+  console.log('✅ Email sent via Gmail to', to);
 }
 
 // ── Token + OTP helpers ────────────────────────────────────
