@@ -7,15 +7,17 @@ import { RecentTransactions } from '@/components/dashboard/recent-transactions';
 import { AIInsightCard } from '@/components/dashboard/ai-insight-card';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useAuth } from '@/lib/auth-context';
+import { useLang } from '@/lib/language-context';
 import { Sparkles } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { t, lang } = useLang();
   const { summary, transactions, insights, spendingByCategory, loading, insightsLoading, error, insightFresh } = useDashboardData();
   const firstName = user?.name?.split(' ')[0] || 'there';
-  const now = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const now = new Date().toLocaleDateString(lang === 'am' ? 'en-ET' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const greeting = hour < 12 ? t('goodMorning') : hour < 18 ? t('goodAfternoon') : t('goodEvening');
 
   return (
     <DashboardLayout>
@@ -28,11 +30,11 @@ export default function DashboardPage() {
             <div>
               <p className="text-white/60 text-xs font-medium mb-1">{now}</p>
               <h1 className="text-2xl lg:text-3xl font-bold text-white">{greeting}, {firstName} 👋</h1>
-              <p className="text-white/70 text-sm mt-1">Here's your financial overview for this month.</p>
+              <p className="text-white/70 text-sm mt-1">{t('financialOverview')}</p>
             </div>
             <div className="flex items-center gap-2 bg-white/15 backdrop-blur border border-white/20 rounded-xl px-4 py-2.5 w-fit">
               <Sparkles className="w-4 h-4 text-white" />
-              <span className="text-white text-xs font-semibold">AI-Powered Insights Active</span>
+              <span className="text-white text-xs font-semibold">{t('aiPoweredActive')}</span>
             </div>
           </div>
         </div>
