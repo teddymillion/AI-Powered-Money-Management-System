@@ -57,6 +57,11 @@ export function LandingNavbar() {
           <a href="#features" className="hover:text-foreground transition-colors">{t('features')}</a>
           <a href="#how" className="hover:text-foreground transition-colors">{t('howItWorks')}</a>
           <a href="#testimonials" className="hover:text-foreground transition-colors">{t('reviews')}</a>
+          {user && (
+            <Link href="/dashboard" className="flex items-center gap-1.5 text-accent font-semibold hover:text-accent/80 transition-colors">
+              <LayoutDashboard className="w-3.5 h-3.5" />{t('dashboard')}
+            </Link>
+          )}
         </div>
 
         {/* Right side */}
@@ -152,7 +157,10 @@ export function LandingNavbar() {
           <div className="pt-2 border-t border-border flex flex-col gap-2">
             {user ? (
               <>
-                <Link href="/dashboard" onClick={() => setMobileNavOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-secondary transition-all">{t('dashboard')}</Link>
+                <Link href="/dashboard" onClick={() => setMobileNavOpen(false)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-accent bg-accent/10 hover:bg-accent/20 transition-all">
+                  <LayoutDashboard className="w-4 h-4" />{t('dashboard')}
+                </Link>
+                <Link href="/profile" onClick={() => setMobileNavOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">{t('profile')}</Link>
                 <button onClick={() => { logout(); setMobileNavOpen(false); }} className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-destructive hover:bg-destructive/10 transition-all">{t('signOut')}</button>
               </>
             ) : (
