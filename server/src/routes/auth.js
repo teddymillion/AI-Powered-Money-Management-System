@@ -2,7 +2,6 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
 import { User } from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 import { pushNotification } from '../utils/notificationBus.js';
@@ -17,29 +16,34 @@ async function sendNotification(userId, notif) {
   pushNotification(userId, notif);
 }
 
-// ── Email sender: Brevo SMTP (IPv4, works on Render free tier) ──
+// ── Email via Brevo HTTP API (HTTPS port 443, works on Render free) ──
 async function sendEmail({ to, subject, html }) {
-  if (!process.env.BREVO_USER || !process.env.BREVO_PASS) {
-    // Fallback: log so admin can retrieve OTP/reset URL from Render logs
-    console.log(`📧 [EMAIL NOT CONFIGURED] TO: ${to}`);
+  const apiKey = process.env.BREVO_API_KEY;
+  const sender = process.env.BREVO_SENDER || 'tedrosmilion19@gmail.com';
+
+  if (!apiKey) {
+    console.log(`📧 [BREVO_API_KEY not set] TO: ${to} | SUBJECT: ${subject}`);
     throw new Error('Email not configured');
   }
-  const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.BREVO_USER,
-      pass: process.env.BREVO_PASS,
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'api-key': apiKey,
+      'content-type': 'application/json',
     },
+    body: JSON.stringify({
+      sender: { name: 'ስሙኒ ዋሌት', email: sender },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
   });
-  await transporter.sendMail({
-    from: `"ስሙኒ ዋሌት" <${process.env.BREVO_USER}>`,
-    to,
-    subject,
-    html,
-  });
-  console.log('✅ Email sent via Brevo to', to);
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `Brevo error ${res.status}`);
+  console.log('✅ Email sent via Brevo API to', to);
 }
 
 // ── Token + OTP helpers ────────────────────────────────────
@@ -152,7 +156,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ── Request OTP (login step 1) ─────────────────────────────
+// ── Request OTP ────────────────────────────────────────────
 router.post('/login/request-otp', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -171,7 +175,7 @@ router.post('/login/request-otp', async (req, res) => {
     await user.save();
 
     sendEmail({ to: email, subject: 'ስሙኒ ዋሌት — Your Login OTP', html: otpEmailHtml(user.name.split(' ')[0], otp) })
-      .catch(err => { console.error('❌ Login OTP email failed:', err.message); console.log('🔑 OTP for', email, ':', otp); });
+      .catch(err => { console.error('❌ Login OTP failed:', err.message); console.log('🔑 OTP for', email, ':', otp); });
 
     return res.json({ message: 'OTP sent to your email.', email });
   } catch (error) {
@@ -260,7 +264,7 @@ router.post('/forgot-password', async (req, res) => {
           </div>
           <div style="padding:32px">
             <h2 style="color:#f5f5f5;font-size:20px;margin:0 0 8px">Reset Your Password</h2>
-            <p style="color:#94a3b8;font-size:14px;margin:0 0 24px">Click the button below. Link expires in <strong style="color:#f5f5f5">1 hour</strong>.</p>
+            <p style="color:#94a3b8;font-size:14px;margin:0 0 24px">Click below to reset your password. Link expires in <strong style="color:#f5f5f5">1 hour</strong>.</p>
             <div style="text-align:center;margin:0 0 24px">
               <a href="${resetUrl}" style="display:inline-block;background:#10b981;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:12px;text-decoration:none">Reset Password</a>
             </div>
@@ -275,7 +279,6 @@ router.post('/forgot-password', async (req, res) => {
 
     return res.json({ message: 'If that email exists, a reset link has been sent.' });
   } catch (error) {
-    console.error('Forgot password error:', error.message);
     return res.status(500).json({ error: 'Failed to process request.' });
   }
 });
