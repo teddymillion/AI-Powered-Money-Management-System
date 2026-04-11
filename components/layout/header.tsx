@@ -6,12 +6,14 @@ import { Sun, Moon, Search } from 'lucide-react';
 import { AddTransactionModal } from '@/components/transaction/add-transaction-modal';
 import { NotificationPanel } from '@/components/notifications/notification-panel';
 import { useAuth } from '@/lib/auth-context';
+import { useLang } from '@/lib/language-context';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export function Header() {
   const { user } = useAuth();
   const router   = useRouter();
+  const { lang, setLang, t } = useLang();
   const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export function Header() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search transactions..."
+              placeholder={t('searchPlaceholder')}
               className="w-full pl-9 pr-4 py-2 bg-secondary border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all"
             />
           </div>
@@ -50,8 +52,17 @@ export function Header() {
         <div className="flex items-center gap-2 ml-auto">
           <AddTransactionModal />
 
+          {/* Language toggle */}
+          <button
+            onClick={() => setLang(lang === 'en' ? 'am' : 'en')}
+            title={lang === 'en' ? 'Switch to Amharic' : 'Switch to English'}
+            className="h-9 px-3 flex items-center justify-center rounded-xl border border-border bg-secondary hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 text-xs font-bold tracking-wide"
+          >
+            {lang === 'en' ? 'አማ' : 'EN'}
+          </button>
+
           {/* Theme toggle */}
-          <button onClick={toggleTheme} title={isDark ? 'Light mode' : 'Dark mode'}
+          <button onClick={toggleTheme} title={isDark ? t('lightMode') : t('darkMode')}
             className="w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-secondary hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200">
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
@@ -62,7 +73,7 @@ export function Header() {
           {/* Avatar → profile */}
           <button
             onClick={() => router.push('/profile')}
-            title="View profile"
+            title={t('profile')}
             className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center hover:shadow-lg hover:shadow-accent/20 hover:scale-105 transition-all duration-200 text-xs font-bold text-accent-foreground flex-shrink-0"
           >
             {avatarSrc

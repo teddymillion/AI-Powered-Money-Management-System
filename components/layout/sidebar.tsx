@@ -9,25 +9,25 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useSidebar } from '@/lib/sidebar-context';
+import { useLang } from '@/lib/language-context';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
-const NAV = [
-  { href: '/dashboard', label: 'Dashboard',    icon: LayoutDashboard, badge: null },
-  { href: '/assistant', label: 'AI Assistant', icon: Sparkles,        badge: 'AI' },
-  { href: '/budget',    label: 'Budget',       icon: Target,          badge: null },
-  { href: '/analytics', label: 'Analytics',    icon: BarChart3,       badge: null },
-  { href: '/profile',   label: 'Profile',      icon: UserCircle,      badge: null },
-];
 
 export function Sidebar() {
   const pathname  = usePathname();
   const router    = useRouter();
   const { user, logout } = useAuth();
   const { collapsed, setCollapsed } = useSidebar();
-
-  // Mobile: drawer open/closed
+  const { t } = useLang();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const NAV = [
+    { href: '/dashboard', label: t('dashboard'),   icon: LayoutDashboard, badge: null },
+    { href: '/assistant', label: t('aiAssistant'), icon: Sparkles,        badge: 'AI' },
+    { href: '/budget',    label: t('budget'),       icon: Target,          badge: null },
+    { href: '/analytics', label: t('analytics'),    icon: BarChart3,       badge: null },
+    { href: '/profile',   label: t('profile'),      icon: UserCircle,      badge: null },
+  ];
 
   const initials  = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
   const avatarSrc = user?.avatar ? `${API_BASE}${user.avatar}` : null;
@@ -108,7 +108,7 @@ export function Sidebar() {
       <nav className={`flex-1 py-4 space-y-0.5 overflow-y-auto scrollbar-thin ${collapsed ? 'px-2' : 'px-3'}`}>
         {!collapsed && (
           <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-accent-foreground">
-            Menu
+            {t('menu')}
           </p>
         )}
         <NavItems mini={collapsed} />
@@ -156,7 +156,7 @@ export function Sidebar() {
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-sidebar-accent-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
             >
               <LogOut className="w-4 h-4" />
-              Sign Out
+              {t('signOut')}
             </button>
           </>
         )}
@@ -182,7 +182,7 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto scrollbar-thin">
-        <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-accent-foreground">Menu</p>
+        <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-accent-foreground">{t('menu')}</p>
         <NavItems mini={false} />
       </nav>
 
@@ -212,7 +212,7 @@ export function Sidebar() {
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-sidebar-accent-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
         >
           <LogOut className="w-4 h-4" />
-          Sign Out
+          {t('signOut')}
         </button>
       </div>
     </aside>
