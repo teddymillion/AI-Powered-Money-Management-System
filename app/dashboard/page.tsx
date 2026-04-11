@@ -13,7 +13,7 @@ import { Sparkles } from 'lucide-react';
 export default function DashboardPage() {
   const { user } = useAuth();
   const { t, lang } = useLang();
-  const { summary, transactions, insights, spendingByCategory, loading, insightsLoading, error, insightFresh } = useDashboardData();
+  const { summary, transactions, insights, spendingByCategory, loading, insightsLoading, error, insightFresh, rawSummary, incomeOverride, expenseOverride, setIncome, setExpense } = useDashboardData();
   const firstName = user?.name?.split(' ')[0] || 'there';
   const now = new Date().toLocaleDateString(lang === 'am' ? 'en-ET' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const hour = new Date().getHours();
@@ -43,7 +43,19 @@ export default function DashboardPage() {
           <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">⚠ {error}</div>
         )}
 
-        <OverviewCards balance={summary?.balance ?? 0} income={summary?.income ?? 0} expenses={summary?.expenses ?? 0} savings={summary?.savings ?? 0} loading={loading} />
+        <OverviewCards
+          balance={summary?.balance ?? 0}
+          income={summary?.income ?? 0}
+          expenses={summary?.expenses ?? 0}
+          savings={summary?.savings ?? 0}
+          rawIncome={rawSummary?.income ?? 0}
+          rawExpenses={rawSummary?.expenses ?? 0}
+          incomeOverride={incomeOverride}
+          expenseOverride={expenseOverride}
+          onSetIncome={setIncome}
+          onSetExpense={setExpense}
+          loading={loading}
+        />
         <AIInsightCard insights={insights} loading={insightsLoading} highlight={insightFresh} />
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">

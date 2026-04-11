@@ -22,6 +22,15 @@ export interface AIInsight {
   priority: 'low' | 'medium' | 'high';
 }
 
+const INCOME_KEY  = 'override_income';
+const EXPENSE_KEY = 'override_expense';
+
+function readOverride(key: string): number | null {
+  if (typeof window === 'undefined') return null;
+  const v = localStorage.getItem(key);
+  return v !== null ? Number(v) : null;
+}
+
 export function useDashboardData() {
   const router = useRouter();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -31,6 +40,30 @@ export function useDashboardData() {
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [insightFresh, setInsightFresh] = useState(false);
+  // Override state — changing these triggers re-render of everything
+  const [incomeOverride, setIncomeOverride]   = useState<number | null>(() => readOverride(INCOME_KEY));
+  const [expenseOverride, setExpenseOverride] = useState<number | null>(() => readOverride(EXPENSE_KEY));
+
+  const setIncome = (v: number | null) => {
+    if (v === null) localStorage.removeItem(INCOME_KEY);
+    else localStorage.setItem(INCOME_KEY, String(v));
+    setIncomeOverride(v);
+  };
+  const setExpense = (v: number | null) => {
+    if (v === null) localStorage.removeItem(EXPENSE_KEY);
+    else localStorage.setItem(EXPENSE_KEY, String(v));
+    setExpenseOverride(v);
+  };
+
+  // Effective values — override wins over API value
+  const effectiveSummary = useMemo(() => {
+    if (!summary) return null;
+    const income   = incomeOverride  !== null ? incomeOverride  : summary.income;
+    const expenses = expenseOverride !== null ? expenseOverride : summary.expenses;
+    const savings  = income - expenses;
+    const balance  = savings; // balance = income - expenses for the month
+    return { ...summary, income, expenses, savings, balance };
+  }, [summary, incomeOverride, expenseOverride]);
 
   const fetchInsights = useCallback(async () => {
     setInsightsLoading(true);
@@ -88,12 +121,13 @@ export function useDashboardData() {
   }, [fetchData, fetchInsights]);
 
   const spendingByCategory = useMemo(() => {
-    if (!summary) return [];
-    return buildCategorySpending(summary.byCategory);
-  }, [summary]);
+    if (!effectiveSummary) return [];
+    return buildCategorySpending(effectiveSummary.byCategory);
+  }, [effectiveSummary]);
 
   return {
-    summary,
+    summary: effectiveSummary,
+    rawSummary: summary,
     transactions,
     insights,
     spendingByCategory,
@@ -102,5 +136,10 @@ export function useDashboardData() {
     error,
     refresh: fetchData,
     insightFresh,
+    // Override controls passed down to OverviewCards
+    incomeOverride,
+    expenseOverride,
+    setIncome,
+    setExpense,
   };
 }
