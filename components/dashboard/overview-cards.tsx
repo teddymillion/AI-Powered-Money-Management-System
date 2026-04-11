@@ -58,7 +58,7 @@ function EditPopover({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95, y: -8 }}
       transition={{ duration: 0.15 }}
-      className="absolute top-full left-0 mt-2 z-50 w-64 rounded-2xl border border-border bg-card shadow-2xl shadow-black/20 p-4"
+      className="absolute top-full left-0 right-0 sm:right-auto sm:w-64 mt-2 z-50 rounded-2xl border border-border bg-card shadow-2xl shadow-black/20 p-4"
     >
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-bold text-foreground uppercase tracking-wider">{t('edit')} {label}</p>
@@ -213,7 +213,7 @@ export function OverviewCards({ income, expenses, savings, balance, loading = fa
                         className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-200 ${
                           isEditing
                             ? 'bg-accent text-accent-foreground'
-                            : 'opacity-0 group-hover:opacity-100 bg-secondary text-muted-foreground hover:text-foreground hover:bg-muted'
+                            : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 bg-secondary text-muted-foreground hover:text-foreground hover:bg-muted'
                         }`}
                         title={`Edit ${card.label}`}
                       >
