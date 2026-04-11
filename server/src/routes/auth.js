@@ -17,31 +17,29 @@ async function sendNotification(userId, notif) {
   pushNotification(userId, notif);
 }
 
-// ── Email sender: Gmail SMTP port 587 (IPv4, works on Render free) ──
+// ── Email sender: Brevo SMTP (IPv4, works on Render free tier) ──
 async function sendEmail({ to, subject, html }) {
-  if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+  if (!process.env.BREVO_USER || !process.env.BREVO_PASS) {
+    // Fallback: log so admin can retrieve OTP/reset URL from Render logs
     console.log(`📧 [EMAIL NOT CONFIGURED] TO: ${to}`);
     throw new Error('Email not configured');
   }
   const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
+    host: 'smtp-relay.brevo.com',
     port: 587,
     secure: false,
-    requireTLS: true,
     auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS,
+      user: process.env.BREVO_USER,
+      pass: process.env.BREVO_PASS,
     },
-    tls: { rejectUnauthorized: false },
-    family: 4, // force IPv4 — Render free tier blocks IPv6
   });
   await transporter.sendMail({
-    from: `"ስሙኒ ዋሌት" <${process.env.MAIL_USER}>`,
+    from: `"ስሙኒ ዋሌት" <${process.env.BREVO_USER}>`,
     to,
     subject,
     html,
   });
-  console.log('✅ Email sent via Gmail to', to);
+  console.log('✅ Email sent via Brevo to', to);
 }
 
 // ── Token + OTP helpers ────────────────────────────────────
