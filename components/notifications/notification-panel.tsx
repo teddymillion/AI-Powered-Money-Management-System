@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle, XCircle, X } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useLang } from '@/lib/language-context';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -30,6 +31,7 @@ export function NotificationPanel() {
   const panelRef                          = useRef<HTMLDivElement>(null);
   const retryRef                          = useRef<ReturnType<typeof setTimeout> | null>(null);
   const esRef                             = useRef<EventSource | null>(null);
+  const { t } = useLang();
 
   const unread = notifications.filter(n => !n.read).length;
 
@@ -138,14 +140,14 @@ export function NotificationPanel() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-accent" />
-              <span className="text-sm font-semibold text-foreground">Notifications</span>
+              <span className="text-sm font-semibold text-foreground">{t('notifications')}</span>
               {unread > 0 && (
                 <span className="text-[10px] font-bold bg-accent text-accent-foreground px-1.5 py-0.5 rounded-full">{unread}</span>
               )}
             </div>
             <div className="flex items-center gap-1">
               {unread > 0 && (
-                <button onClick={markAllRead} title="Mark all read"
+                <button onClick={markAllRead} title={t('markAllRead')}
                   className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-all">
                   <CheckCheck className="w-3.5 h-3.5" />
                 </button>
@@ -168,8 +170,8 @@ export function NotificationPanel() {
                 <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center mb-3">
                   <Bell className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <p className="text-sm font-medium text-foreground">All caught up!</p>
-                <p className="text-xs text-muted-foreground mt-1">No notifications yet.</p>
+                <p className="text-sm font-medium text-foreground">{t('allCaughtUp')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('noNotifications')}</p>
               </div>
             ) : (
               notifications.map(n => {

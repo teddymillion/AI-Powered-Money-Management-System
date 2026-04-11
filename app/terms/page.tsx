@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft } from 'lucide-react';
+import { useLang } from '@/lib/language-context';
+import { LanguageToggle } from '@/components/language-toggle';
 
 const SECTIONS = [
   {
@@ -41,22 +45,27 @@ const SECTIONS = [
   },
   {
     title: '10. Contact',
-    body: `If you have any questions about these Terms of Service, please contact us at tedrosmilion19@gmail.com or reach out via Telegram at @Lataxv72.`,
+    body: `If you have any questions about these Terms of Service, please contact us at tedrosmilion19@gmail.com or reach out via Telegram at @Lataxv7.`,
   },
 ];
 
 export default function TermsPage() {
+  const { t } = useLang();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> {t('backToHome')}
           </Link>
-          <div className="flex items-center gap-2">
-            <Image src="/favicon.png" alt="ስሙኒ ዋሌት" width={24} height={24} className="rounded-md" />
-            <span className="text-sm font-semibold text-foreground">ስሙኒ ዋሌት</span>
+          <div className="flex items-center gap-3">
+            <LanguageToggle />
+            <div className="flex items-center gap-2">
+              <Image src="/favicon.png" alt="ስሙኒ ዋሌት" width={24} height={24} className="rounded-md" />
+              <span className="text-sm font-semibold text-foreground">ስሙኒ ዋሌት</span>
+            </div>
           </div>
         </div>
       </div>
@@ -64,11 +73,11 @@ export default function TermsPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
         {/* Title */}
         <div className="mb-12 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent">Legal</p>
-          <h1 className="text-4xl font-bold text-foreground">Terms of Service</h1>
-          <p className="text-muted-foreground text-sm">Last updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent">{t('termsPageTitle')}</p>
+          <h1 className="text-4xl font-bold text-foreground">{t('termsOfService')}</h1>
+          <p className="text-muted-foreground text-sm">{t('lastUpdated')} {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
           <p className="text-muted-foreground leading-relaxed">
-            Please read these Terms of Service carefully before using ስሙኒ ዋሌት. These terms govern your access to and use of our platform.
+            {t('termsIntro')}
           </p>
         </div>
 
@@ -87,7 +96,7 @@ export default function TermsPage() {
           <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} ስሙኒ ዋሌት. All rights reserved.</p>
           <div className="flex gap-4 text-xs">
             <a href="mailto:tedrosmilion19@gmail.com" className="text-muted-foreground hover:text-foreground transition-colors">tedrosmilion19@gmail.com</a>
-            <a href="https://t.me/Lataxv72" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">@Lataxv72</a>
+            <a href="https://t.me/Lataxv7" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">@Lataxv7</a>
           </div>
         </div>
       </div>
