@@ -27,11 +27,6 @@ export default function LoginPage() {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem('theme');
-    document.documentElement.classList.toggle('dark', stored !== 'light');
-  }, []);
-
-  useEffect(() => {
     if (resendTimer > 0) {
       const t = setTimeout(() => setResendTimer(r => r - 1), 1000);
       return () => clearTimeout(t);

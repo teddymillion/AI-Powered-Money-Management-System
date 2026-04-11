@@ -356,11 +356,6 @@ export default function LandingPage() {
   const STATS = lang === 'am' ? STATS_AM : STATS_EN;
   const TESTIMONIALS = lang === 'am' ? TESTIMONIALS_AM : TESTIMONIALS_EN;
 
-  useEffect(() => {
-    const stored = localStorage.getItem('theme');
-    document.documentElement.classList.toggle('dark', stored !== 'light');
-  }, []);
-
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
 

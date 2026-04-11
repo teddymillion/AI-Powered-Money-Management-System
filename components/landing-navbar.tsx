@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronDown, LayoutDashboard, LogOut, ArrowRight } from 'lucide-react';
+import { ChevronDown, LayoutDashboard, LogOut, ArrowRight, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useLang } from '@/lib/language-context';
 import { LanguageToggle } from './language-toggle';
@@ -12,9 +12,22 @@ export function LandingNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, logout, isLoading } = useAuth();
   const { t } = useLang();
+
+  useEffect(() => {
+    const stored = localStorage.getItem('theme');
+    setIsDark(stored !== 'light');
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('theme', next ? 'dark' : 'light');
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -50,6 +63,14 @@ export function LandingNavbar() {
         {!isLoading && (
           <div className="flex items-center gap-2 sm:gap-3">
             <LanguageToggle />
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-card/80 backdrop-blur-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
+              title={isDark ? 'Light mode' : 'Dark mode'}
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <button onClick={() => setMobileNavOpen(o => !o)} className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-card/80 backdrop-blur-sm">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 {mobileNavOpen ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
