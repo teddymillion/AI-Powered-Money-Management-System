@@ -18,32 +18,38 @@ async function sendNotification(userId, notif) {
   pushNotification(userId, notif);
 }
 
-// ── Email sender: Resend first, Gmail SMTP fallback ────────
+// ── Email sender: Gmail SMTP (works for all recipients) ──
 async function sendEmail({ to, subject, html }) {
-  // 1. Try Resend API (most reliable on cloud)
+  // Try Resend first if configured
   if (process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
+      const result = await resend.emails.send({
         from: 'ስሙኒ ዋሌት <onboarding@resend.dev>',
         to,
         subject,
         html,
       });
+      // Resend free tier blocks sending to unverified emails
+      // If it errors with 'not verified', fall through to Gmail
+      if (result?.error) throw new Error(result.error.message || 'Resend blocked');
       console.log('✅ Email sent via Resend to', to);
       return;
     } catch (err) {
-      console.error('❌ Resend failed:', err.message);
+      console.error('❌ Resend failed:', err.message, '| trying Gmail...');
     }
   }
 
-  // 2. Fall back to Gmail SMTP
+  // Gmail SMTP — works for ALL recipients, no domain verification needed
   if (process.env.MAIL_USER && process.env.MAIL_PASS) {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 465,
       secure: true,
-      auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
     });
     await transporter.sendMail({
       from: `"ስሙኒ ዋሌት" <${process.env.MAIL_USER}>`,
@@ -55,9 +61,8 @@ async function sendEmail({ to, subject, html }) {
     return;
   }
 
-  // 3. Nothing configured
-  console.log(`📧 [EMAIL NOT CONFIGURED] TO: ${to} | SUBJECT: ${subject}`);
-  throw new Error('Email not configured');
+  console.log(`📧 [EMAIL NOT CONFIGURED] TO: ${to}`);
+  throw new Error('No email provider configured');
 }
 
 // ── Token + OTP helpers ────────────────────────────────────
