@@ -184,6 +184,10 @@ const translations = {
     failedDelete:         'Failed to delete account.',
     changePhoto:          'Change profile photo',
 
+    // Edit override
+    edit:                 'Edit',
+    actualValue:          'Actual value',
+
     // Notifications
     notifications:        'Notifications',
     allCaughtUp:          'All caught up!',
@@ -484,6 +488,10 @@ const translations = {
     mustTypeDelete:       'ለማረጋገጥ DELETE ብለው ትክክለኛ ቃሉን መጻፍ አለብዎ።',
     failedDelete:         'መለያ መሰረዝ አልተቻለም።',
     changePhoto:          'የፕሮፋይል ፎቶ ቀይር',
+
+    // Edit override
+    edit:                 'አርትዕ',
+    actualValue:          'ትክክለኛ ዋጋ',
 
     // Notifications
     notifications:        'ማሳወቂያዎች',
