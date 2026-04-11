@@ -17,7 +17,7 @@ async function sendNotification(userId, notif) {
   pushNotification(userId, notif);
 }
 
-// ── Email sender: Gmail SMTP only ──────────────────────────
+// ── Email sender: Gmail SMTP port 587 (IPv4, works on Render free) ──
 async function sendEmail({ to, subject, html }) {
   if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
     console.log(`📧 [EMAIL NOT CONFIGURED] TO: ${to}`);
@@ -25,13 +25,15 @@ async function sendEmail({ to, subject, html }) {
   }
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,
+    requireTLS: true,
     auth: {
       user: process.env.MAIL_USER,
       pass: process.env.MAIL_PASS,
     },
     tls: { rejectUnauthorized: false },
+    family: 4, // force IPv4 — Render free tier blocks IPv6
   });
   await transporter.sendMail({
     from: `"ስሙኒ ዋሌት" <${process.env.MAIL_USER}>`,
