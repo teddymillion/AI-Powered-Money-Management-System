@@ -42,23 +42,23 @@ export default function AssistantPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto space-y-5 animate-fade-up">
-        <div className="flex items-start justify-between">
+      <div className="max-w-3xl mx-auto space-y-4 animate-fade-up">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+              <div className="w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center flex-shrink-0">
                 <Sparkles className="w-4 h-4 text-accent" />
               </div>
-              <h1 className="text-2xl font-bold text-foreground">{t('aiAssistantTitle')}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">{t('aiAssistantTitle')}</h1>
               <span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
                 <Wifi className="w-3 h-3" /> LIVE · Llama 3.3
               </span>
             </div>
-            <p className="text-sm text-muted-foreground ml-12">{t('aiAssistantSubtitle')}</p>
+            <p className="text-sm text-muted-foreground sm:ml-12">{t('aiAssistantSubtitle')}</p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card overflow-hidden flex flex-col" style={{ height: '62vh' }}>
+        <div className="rounded-2xl border border-border bg-card overflow-hidden flex flex-col" style={{ height: 'min(62vh, calc(100dvh - 220px))' }}>
           <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>

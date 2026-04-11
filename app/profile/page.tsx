@@ -216,13 +216,13 @@ export default function ProfilePage() {
             <AlertTriangle className="w-4 h-4 text-destructive" />
             <h2 className="text-sm font-semibold text-destructive">{t('dangerZone')}</h2>
           </div>
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-foreground">{t('deleteAccount')}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{t('deleteAccountDesc')}</p>
             </div>
             <button onClick={() => { setShowDeleteModal(true); setDeleteError(null); setDeleteConfirmText(''); }}
-              className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border border-destructive/40 text-destructive text-sm font-semibold hover:bg-destructive hover:text-white transition-all">
+              className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border border-destructive/40 text-destructive text-sm font-semibold hover:bg-destructive hover:text-white transition-all w-full sm:w-auto justify-center sm:justify-start">
               <Trash2 className="w-4 h-4" />{t('delete')}
             </button>
           </div>

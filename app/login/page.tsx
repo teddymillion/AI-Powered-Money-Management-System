@@ -291,11 +291,11 @@ export default function LoginPage() {
                 </p>
               </div>
               <form onSubmit={handleVerifyOTP} className="space-y-6">
-                <div className="flex gap-2 justify-center">
+                <div className="flex gap-1.5 sm:gap-2 justify-center">
                   {otp.map((digit, i) => (
                     <input key={i} ref={el => { otpRefs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={digit}
                       onChange={e => handleOtpChange(i, e.target.value)} onKeyDown={e => handleOtpKeyDown(i, e)} onPaste={handleOtpPaste}
-                      className={`w-12 h-14 text-center text-2xl font-bold rounded-xl bg-secondary border-2 text-foreground focus:outline-none transition-all ${digit ? 'border-accent ring-2 ring-accent/20' : 'border-border focus:border-accent focus:ring-2 focus:ring-accent/30'}`}
+                      className={`w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-xl bg-secondary border-2 text-foreground focus:outline-none transition-all ${digit ? 'border-accent ring-2 ring-accent/20' : 'border-border focus:border-accent focus:ring-2 focus:ring-accent/30'}`}
                     />
                   ))}
                 </div>

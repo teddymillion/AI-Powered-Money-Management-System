@@ -135,7 +135,7 @@ export function NotificationPanel() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 w-80 rounded-2xl border border-border bg-card shadow-2xl shadow-black/20 z-50 overflow-hidden animate-scale-in">
+        <div className="absolute right-0 top-12 w-[calc(100vw-2rem)] sm:w-80 max-w-sm rounded-2xl border border-border bg-card shadow-2xl shadow-black/20 z-50 overflow-hidden animate-scale-in">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="flex items-center gap-2">
