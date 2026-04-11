@@ -8,30 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLang } from '@/lib/language-context';
 
 interface OverviewCardsProps {
-  income: number; expenses: number; savings: number; balance: number; loading?: boolean;
-}
-
-const INCOME_KEY  = 'override_income';
-const EXPENSE_KEY = 'override_expense';
-
-function useOverride(key: string) {
-  const [value, setValue] = useState<number | null>(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(key);
-    if (stored !== null) setValue(Number(stored));
-  }, [key]);
-
-  const set = (v: number) => {
-    localStorage.setItem(key, String(v));
-    setValue(v);
-  };
-  const clear = () => {
-    localStorage.removeItem(key);
-    setValue(null);
-  };
-
-  return { value, set, clear, hasOverride: value !== null };
+  income: number; expenses: number; savings: number; balance: number;
+  rawIncome: number; rawExpenses: number;
+  incomeOverride: number | null; expenseOverride: number | null;
+  onSetIncome: (v: number | null) => void; onSetExpense: (v: number | null) => void;
+  loading?: boolean;
 }
 
 function EditPopover({
@@ -119,10 +100,8 @@ function SkeletonCard() {
   );
 }
 
-export function OverviewCards({ income, expenses, savings, balance, loading = false }: OverviewCardsProps) {
+export function OverviewCards({ income, expenses, savings, balance, rawIncome, rawExpenses, incomeOverride, expenseOverride, onSetIncome, onSetExpense, loading = false }: OverviewCardsProps) {
   const { t } = useLang();
-  const incomeOverride  = useOverride(INCOME_KEY);
-  const expenseOverride = useOverride(EXPENSE_KEY);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
 
   // Close popover on outside click
@@ -142,25 +121,29 @@ export function OverviewCards({ income, expenses, savings, balance, loading = fa
       label: t('totalBalance'), amount: balance,
       icon: Wallet, iconBg: 'bg-accent/15', iconColor: 'text-accent',
       gradient: 'from-accent/10 via-transparent to-transparent',
-      editable: false, override: null,
+      editable: false, hasOverride: false, rawAmount: balance,
+      onSave: (_v: number) => {}, onClear: () => {},
     },
     {
       label: t('monthlyIncome'), amount: income,
       icon: ArrowUpRight, iconBg: 'bg-emerald-500/15', iconColor: 'text-emerald-500',
       gradient: 'from-emerald-500/10 via-transparent to-transparent',
-      editable: true, override: incomeOverride,
+      editable: true, hasOverride: incomeOverride !== null, rawAmount: rawIncome,
+      onSave: (v: number) => onSetIncome(v), onClear: () => onSetIncome(null),
     },
     {
       label: t('totalExpenses'), amount: expenses,
       icon: ArrowDownLeft, iconBg: 'bg-red-500/15', iconColor: 'text-red-500',
       gradient: 'from-red-500/10 via-transparent to-transparent',
-      editable: true, override: expenseOverride,
+      editable: true, hasOverride: expenseOverride !== null, rawAmount: rawExpenses,
+      onSave: (v: number) => onSetExpense(v), onClear: () => onSetExpense(null),
     },
     {
       label: t('netSavings'), amount: savings,
       icon: TrendingUp, iconBg: 'bg-blue-500/15', iconColor: 'text-blue-500',
       gradient: 'from-blue-500/10 via-transparent to-transparent',
-      editable: false, override: null,
+      editable: false, hasOverride: false, rawAmount: savings,
+      onSave: (_v: number) => {}, onClear: () => {},
     },
   ];
 
@@ -175,11 +158,10 @@ export function OverviewCards({ income, expenses, savings, balance, loading = fa
   return (
     <div ref={containerRef} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       {cards.map((card, i) => {
-        const Icon        = card.icon;
-        const displayAmt  = card.override?.hasOverride ? card.override.value! : card.amount;
-        const formatted   = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.abs(displayAmt));
-        const isNegative  = displayAmt < 0;
-        const isEditing   = editingIdx === i;
+        const Icon       = card.icon;
+        const formatted  = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.abs(card.amount));
+        const isNegative = card.amount < 0;
+        const isEditing  = editingIdx === i;
 
         return (
           <motion.div
@@ -198,7 +180,7 @@ export function OverviewCards({ income, expenses, savings, balance, loading = fa
                       <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest truncate">
                         {card.label}
                       </CardTitle>
-                      {card.override?.hasOverride && (
+                      {card.hasOverride && (
                         <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-accent animate-pulse" title="Manually set" />
                       )}
                     </div>
@@ -236,13 +218,13 @@ export function OverviewCards({ income, expenses, savings, balance, loading = fa
 
             {/* Edit popover */}
             <AnimatePresence>
-              {isEditing && card.editable && card.override && (
+              {isEditing && card.editable && (
                 <EditPopover
                   label={card.label}
-                  current={card.amount}
-                  hasOverride={card.override.hasOverride}
-                  onSave={card.override.set}
-                  onClear={card.override.clear}
+                  current={card.rawAmount}
+                  hasOverride={card.hasOverride}
+                  onSave={card.onSave}
+                  onClear={card.onClear}
                   onClose={() => setEditingIdx(null)}
                 />
               )}
