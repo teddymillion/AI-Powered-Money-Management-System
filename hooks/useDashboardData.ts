@@ -61,7 +61,7 @@ export function useDashboardData() {
     const income   = incomeOverride  !== null ? incomeOverride  : summary.income;
     const expenses = expenseOverride !== null ? expenseOverride : summary.expenses;
     const savings  = income - expenses;
-    const balance  = savings; // balance = income - expenses for the month
+    const balance  = income - expenses;
     return { ...summary, income, expenses, savings, balance };
   }, [summary, incomeOverride, expenseOverride]);
 
@@ -87,7 +87,7 @@ export function useDashboardData() {
     }
   }, []);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (clearOverrides = false) => {
     setLoading(true);
     setError(null);
 
@@ -99,6 +99,14 @@ export function useDashboardData() {
 
       setSummary(summaryData as DashboardSummary);
       setTransactions(normalizeTransactions(transactionData as any[]));
+
+      // Clear overrides when real transaction data arrives so actual values show
+      if (clearOverrides) {
+        localStorage.removeItem(INCOME_KEY);
+        localStorage.removeItem(EXPENSE_KEY);
+        setIncomeOverride(null);
+        setExpenseOverride(null);
+      }
     } catch (err) {
       if (err instanceof APIError && err.status === 401) {
         router.replace('/login');
@@ -115,7 +123,8 @@ export function useDashboardData() {
     fetchData();
     fetchInsights();
 
-    const handler = () => fetchData();
+    // When a transaction is added, clear overrides and re-fetch real data
+    const handler = () => fetchData(true);
     window.addEventListener('transactions:updated', handler);
     return () => window.removeEventListener('transactions:updated', handler);
   }, [fetchData, fetchInsights]);
