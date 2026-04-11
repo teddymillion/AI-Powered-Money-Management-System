@@ -11,6 +11,7 @@ import { LandingHero } from '@/components/landing-hero';
 import { LandingFeatures } from '@/components/landing-features';
 import { LandingFooter } from '@/components/landing-footer';
 import { useLang } from '@/lib/language-context';
+import { useAuth } from '@/lib/auth-context';
 
 function NeuralBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -353,6 +354,7 @@ function TestimonialsCarousel({ testimonials }: { testimonials: Testimonial[] })
 
 export default function LandingPage() {
   const { t, lang } = useLang();
+  const { user } = useAuth();
   const STATS = lang === 'am' ? STATS_AM : STATS_EN;
   const TESTIMONIALS = lang === 'am' ? TESTIMONIALS_AM : TESTIMONIALS_EN;
 
@@ -398,9 +400,15 @@ export default function LandingPage() {
               <div className="flex-1 h-px bg-emerald-500/20" />
             </div>
 
-            <Link href="/login" className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(52,211,153,0.35)] hover:shadow-[0_0_45px_rgba(52,211,153,0.5)] hover:-translate-y-0.5">
-              {t('bannerCTA')} <ArrowRight className="w-4 h-4" />
-            </Link>
+            {user ? (
+              <Link href="/dashboard" className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(52,211,153,0.35)] hover:shadow-[0_0_45px_rgba(52,211,153,0.5)] hover:-translate-y-0.5">
+                {t('dashboard')} <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <Link href="/login" className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(52,211,153,0.35)] hover:shadow-[0_0_45px_rgba(52,211,153,0.5)] hover:-translate-y-0.5">
+                {t('bannerCTA')} <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
 
             <div className="flex flex-wrap items-center justify-center gap-6 pt-1">
               {['AI-Powered', 'ETB Native', 'Bank-Grade Security', 'Free to Start'].map(tag => (
@@ -480,9 +488,11 @@ export default function LandingPage() {
             {t('startManaging')} <span className="gradient-text">{t('intelligently')}</span>
           </h2>
           <p className="text-lg text-muted-foreground">{t('joinThousands')}</p>
-          <Link href="/login" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-accent text-accent-foreground font-bold text-lg hover:bg-accent/90 transition-all shadow-2xl shadow-accent/30 hover:-translate-y-1">
-            {t('getStartedFree')} <ArrowRight className="w-5 h-5" />
-          </Link>
+          {!user && (
+            <Link href="/login" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-accent text-accent-foreground font-bold text-lg hover:bg-accent/90 transition-all shadow-2xl shadow-accent/30 hover:-translate-y-1">
+              {t('getStartedFree')} <ArrowRight className="w-5 h-5" />
+            </Link>
+          )}
         </div>
       </section>
 
