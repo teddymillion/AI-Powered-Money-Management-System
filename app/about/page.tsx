@@ -2,9 +2,25 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, ArrowRight, Github, Mail } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Mail } from 'lucide-react';
+import { useLang } from '@/lib/language-context';
+import { LanguageToggle } from '@/components/language-toggle';
 
 export default function AboutPage() {
+  const { t, lang } = useLang();
+
+  const features = lang === 'am' ? [
+    { title: 'AI ምክሮች', desc: 'Llama 3.3 ግብይቶችዎን ይተነትናል እና ግላዊ ምክሮችን በቅጽበት ያቀርባል።' },
+    { title: 'ETB ተወላጅ', desc: 'እያንዳንዱ አሁን በኢትዮጵያ ብር ነው። ምንም ልወጣ የለም፣ ምንም መመሳታት የለም — ለአካባቢያዊ አውድ የተገነባ።' },
+    { title: 'የበጀት ግቦች', desc: 'የቁጠባ ዒላማዎችን ያስቀምጡ፣ እድገትን ይከታተሉ እና ከመንገድ ሲወጡ ማስታወሻዎችን ያግኙ።' },
+    { title: 'የባንክ ደረጃ ደህንነት', desc: 'JWT ማረጋገጫ፣ OTP ማረጋገጫ እና AES-256 የተመሰጠረ ማከማቻ ውሂብዎን ይጠብቃል።' },
+  ] : [
+    { title: 'AI Insights', desc: 'Llama 3.3 analyses your transactions and delivers personalised recommendations in real time.' },
+    { title: 'ETB Native', desc: 'Every figure is in Ethiopian Birr. No conversions, no confusion — built for local context.' },
+    { title: 'Budget Goals', desc: 'Set savings targets, track progress, and get nudged when you drift off course.' },
+    { title: 'Bank-Grade Security', desc: 'JWT auth, OTP verification, and AES-256 encrypted storage protect your data.' },
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
 
@@ -12,11 +28,14 @@ export default function AboutPage() {
       <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> {t('backToHome')}
           </Link>
-          <div className="flex items-center gap-2">
-            <Image src="/favicon.png" alt="ስሙኒ ዋሌት" width={24} height={24} className="rounded-md" />
-            <span className="text-sm font-semibold text-foreground">ስሙኒ ዋሌት</span>
+          <div className="flex items-center gap-3">
+            <LanguageToggle />
+            <div className="flex items-center gap-2">
+              <Image src="/favicon.png" alt="ስሙኒ ዋሌት" width={24} height={24} className="rounded-md" />
+              <span className="text-sm font-semibold text-foreground">ስሙኒ ዋሌት</span>
+            </div>
           </div>
         </div>
       </div>
@@ -25,31 +44,26 @@ export default function AboutPage() {
 
         {/* ── Hero ── */}
         <div className="space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent">About</p>
-          <h1 className="text-4xl font-bold text-foreground">Built for Ethiopia.<br />Powered by AI.</h1>
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent">{t('aboutPageTitle')}</p>
+          <h1 className="text-4xl font-bold text-foreground">{t('aboutHeroTitle')}</h1>
           <p className="text-muted-foreground leading-relaxed text-base max-w-xl">
-            ስሙኒ ዋሌት is a modern, AI-powered personal finance platform designed specifically for Ethiopians — helping you track every birr, understand your spending, and grow your savings with intelligent guidance.
+            {t('aboutHeroDesc')}
           </p>
         </div>
 
         {/* ── Mission ── */}
         <div className="p-8 rounded-2xl border border-border bg-card space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">Our Mission</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('ourMission')}</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Financial clarity should not be a privilege. Too many people in Ethiopia manage their money without the tools or insights to make confident decisions. ስሙኒ ዋሌት exists to change that — by putting a smart, context-aware financial assistant in everyone's pocket, completely free.
+            {t('ourMissionText')}
           </p>
         </div>
 
         {/* ── What we built ── */}
         <div className="space-y-6">
-          <h2 className="text-lg font-semibold text-foreground">What We Built</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('whatWeBuilt')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { title: 'AI Insights', desc: 'Llama 3.3 analyses your transactions and delivers personalised recommendations in real time.' },
-              { title: 'ETB Native', desc: 'Every figure is in Ethiopian Birr. No conversions, no confusion — built for local context.' },
-              { title: 'Budget Goals', desc: 'Set savings targets, track progress, and get nudged when you drift off course.' },
-              { title: 'Bank-Grade Security', desc: 'JWT auth, OTP verification, and AES-256 encrypted storage protect your data.' },
-            ].map(({ title, desc }) => (
+            {features.map(({ title, desc }) => (
               <div key={title} className="p-5 rounded-xl border border-border bg-card/50 space-y-1.5">
                 <p className="text-sm font-semibold text-foreground">{title}</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
@@ -151,7 +165,7 @@ export default function AboutPage() {
                   Gmail
                 </a>
                 <a
-                  href="https://t.me/Lataxv72"
+                  href="https://t.me/Lataxv7"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-secondary/50 text-sm text-muted-foreground hover:text-foreground hover:border-[#2AABEE]/40 hover:bg-[#2AABEE]/5 transition-all"

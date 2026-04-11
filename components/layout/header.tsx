@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Sun, Moon, Search } from 'lucide-react';
 import { AddTransactionModal } from '@/components/transaction/add-transaction-modal';
 import { NotificationPanel } from '@/components/notifications/notification-panel';
+import { LanguageToggle } from '@/components/language-toggle';
 import { useAuth } from '@/lib/auth-context';
 import { useLang } from '@/lib/language-context';
 
@@ -13,7 +14,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 export function Header() {
   const { user } = useAuth();
   const router   = useRouter();
-  const { lang, setLang, t } = useLang();
+  const { t } = useLang();
   const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
@@ -53,13 +54,7 @@ export function Header() {
           <AddTransactionModal />
 
           {/* Language toggle */}
-          <button
-            onClick={() => setLang(lang === 'en' ? 'am' : 'en')}
-            title={lang === 'en' ? 'Switch to Amharic' : 'Switch to English'}
-            className="h-9 px-3 flex items-center justify-center rounded-xl border border-border bg-secondary hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 text-xs font-bold tracking-wide"
-          >
-            {lang === 'en' ? 'አማ' : 'EN'}
-          </button>
+          <LanguageToggle />
 
           {/* Theme toggle */}
           <button onClick={toggleTheme} title={isDark ? t('lightMode') : t('darkMode')}
