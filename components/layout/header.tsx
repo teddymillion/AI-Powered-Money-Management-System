@@ -37,8 +37,11 @@ export function Header() {
 
   return (
     <header className="h-16 sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-xl">
-      <div className="h-full px-4 lg:px-8 flex items-center gap-4">
-        {/* Search */}
+      <div className="h-full px-4 lg:px-8 flex items-center gap-3">
+        {/* Spacer for mobile hamburger */}
+        <div className="w-9 lg:hidden flex-shrink-0" />
+
+        {/* Search — desktop */}
         <div className="hidden md:flex flex-1 max-w-sm">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -52,20 +55,12 @@ export function Header() {
 
         <div className="flex items-center gap-2 ml-auto">
           <AddTransactionModal />
-
-          {/* Language toggle */}
           <LanguageToggle />
-
-          {/* Theme toggle */}
           <button onClick={toggleTheme} title={isDark ? t('lightMode') : t('darkMode')}
             className="w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-secondary hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200">
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
-
-          {/* Notifications */}
           <NotificationPanel />
-
-          {/* Avatar → profile */}
           <button
             onClick={() => router.push('/profile')}
             title={t('profile')}

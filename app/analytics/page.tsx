@@ -66,10 +66,10 @@ export default function AnalyticsPage() {
 
         {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</div>}
 
-        <div className="flex gap-2 p-1 bg-secondary/30 rounded-xl w-fit">
+        <div className="flex gap-1.5 p-1 bg-secondary/30 rounded-xl w-full sm:w-fit overflow-x-auto">
           {(['weekly', 'monthly', 'yearly'] as const).map((view) => (
-            <Button key={view} onClick={() => setViewType(view)}
-              className={`transition-all duration-300 ${viewType === view ? 'bg-accent text-accent-foreground shadow-lg' : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'}`}>
+            <Button key={view} onClick={() => setViewType(view)} size="sm"
+              className={`flex-1 sm:flex-none transition-all duration-300 ${viewType === view ? 'bg-accent text-accent-foreground shadow-lg' : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'}`}>
               {viewLabels[view]}
             </Button>
           ))}

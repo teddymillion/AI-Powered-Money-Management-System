@@ -63,7 +63,7 @@ export default function BudgetPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-up">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Target className="w-5 h-5 text-accent" />
