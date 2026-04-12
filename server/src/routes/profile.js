@@ -3,8 +3,13 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { User } from '../models/User.js';
 import { registerClient, removeClient } from '../utils/notificationBus.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const UPLOADS_DIR = path.join(__dirname, '../../uploads');
 
 const router = Router();
 
@@ -167,6 +172,14 @@ router.delete('/account', async (req, res) => {
   try {
     const { Transaction } = await import('../models/Transaction.js');
     const { Goal }        = await import('../models/Goal.js');
+
+    // Delete avatar file from disk if it exists
+    const user = await User.findById(req.user.id).select('avatar');
+    if (user?.avatar) {
+      const filePath = path.join(UPLOADS_DIR, path.basename(user.avatar));
+      fs.unlink(filePath, () => {}); // silent — don't block deletion if file missing
+    }
+
     await Promise.all([
       Transaction.deleteMany({ userId: req.user.id }),
       Goal.deleteMany({ userId: req.user.id }),

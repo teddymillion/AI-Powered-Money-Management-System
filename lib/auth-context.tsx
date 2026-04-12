@@ -48,8 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
+    ['auth_token', 'auth_user', 'override_income', 'override_expense', 'insight_hash'].forEach(k => localStorage.removeItem(k));
     setToken(null);
     setUser(null);
   }, []);

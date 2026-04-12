@@ -84,7 +84,13 @@ export default function ProfilePage() {
     e.preventDefault();
     if (deleteConfirmText !== 'DELETE') { setDeleteError(t('mustTypeDelete')); return; }
     setDeleteLoading(true); setDeleteError(null);
-    try { await api.deleteAccount(); logout(); router.push('/'); }
+    try {
+      await api.deleteAccount();
+      // Wipe all app-specific localStorage so a new account starts clean
+      ['override_income', 'override_expense', 'insight_hash', 'auth_token', 'user'].forEach(k => localStorage.removeItem(k));
+      logout();
+      router.push('/');
+    }
     catch (err) { setDeleteError(err instanceof APIError ? err.message : t('failedDelete')); }
     finally { setDeleteLoading(false); }
   };
