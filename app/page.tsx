@@ -139,7 +139,7 @@ const TESTIMONIALS_AM = [
     company: 'ኮንዲጂታል ቴክኖሎጂስ ፒኤልሲ',
     companyIcon: '/condigital.jpg',
     photo: '/bini.png',
-    text: 'ስሙኒ ዋሌት የፋይናንስ እቅድ አወጣጤን ቀይሮታል። AI ምክሮች ስለ ፍሪላንስ ገቢዬ በመረጃ ላይ የተመሰረተ ውሳኔ እንድወስድ ይረዳኛል።', 
+    text: 'ስሙኒ ዋሌት የፋይናንስ እቅድ አወጣጤን ቀይሮታል። የAI ምክሮች ስለ ፍሪላንስ ገቢዬ በመረጃ ላይ የተመሰረተ ውሳኔ እንድወስን ይረዳኛል።', 
     stars: 5 
   },
   { 
@@ -148,12 +148,12 @@ const TESTIMONIALS_AM = [
     company: 'ኢትዮ ቴሌኮም',
     companyIcon: '/ethiotelecom.jpg',
     photo: '/omar.png',
-    text: 'በመጨረሻ ኢትዮጵያዊ አውድ የሚረዳ የፋይናንስ አፕ። የእውነተኛ ጊዜ ክትትል እና የበጀት አስተዳደር ልዩ ናቸው።', 
+    text: 'በመጨረሻ የኢትዮጵያን አውድ የሚረዳ የፋይናንስ አፕ። የቀጥተኛ ጊዜ ክትትል እና የበጀት አስተዳደር ልዩ ናቸው።', 
     stars: 5 
   },
   { 
     name: 'ሚኪያስ መስፍን', 
-    role: 'ሶፍትዌር ኢንጂኒር እና የዝግጅት አዘጋጅ', 
+    role: 'ሶፍትዌር ኢንጂኒር እና ኢቨንት ኦርጋናይዘር', 
     company: 'ሐረር የኢኖቬሽን እና ቴክኖሎጂ ሚኒስቴር',
     companyIcon: '/harar.jpg',
     photo: '/lucho.png',
