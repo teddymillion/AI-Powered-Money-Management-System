@@ -130,6 +130,15 @@ const TESTIMONIALS_EN = [
     text: 'The AI assistant is brilliant! It helps me manage both my salary and event budgets seamlessly. Highly recommended.', 
     stars: 5 
   },
+    { 
+    name: 'Hana Alemayew', 
+    role: 'Software Engineer & DB Engineer', 
+    company: 'ALTA Computec PLC',
+    companyIcon: '/alta.png',
+    photo: '/hana.png',
+    text: 'Absolutely brilliant! It makes managing salary and event budgets effortless. As a Software Engineer, I highly value the efficiency and logic it brings to my daily workflow. Highly recommended!', 
+    stars: 5 
+  },
 ];
 
 const TESTIMONIALS_AM = [
@@ -158,6 +167,15 @@ const TESTIMONIALS_AM = [
     companyIcon: '/harar.jpg',
     photo: '/lucho.png',
     text: 'AI ረዳቱ አስደናቂ ነው! ደመወዝዬን እና የዝግጅት በጀቶችን በቀላሉ እንድያስተዳድር ይረዳኛል። በጣም እመክራለሁ።', 
+    stars: 5 
+  },
+  { 
+    name: 'ሀና አለማየው', 
+    role: 'ሶፍትዌር ኢንጂኒር እና ዳታቤዝ ኢንጂኒር', 
+    company: 'አልታ ኮምፒዩተክ ፒኤልሲ',
+    companyIcon: '/alta.png',
+    photo: '/hana.png',
+    text: 'ድንቅ ሲስተም! ደመወዝንና በጀትን በቀላሉ ለመቆጣጠር ይረዳል። እንደ ሶፍትዌር ኢንጂነርnነቴ፣ የዚህን መተግበሪያ ቅልጥፍና እና ሎጂኩን በጣም ወድጄዋለሁ። ተጠቀሙበት!', 
     stars: 5 
   },
 ];
@@ -381,41 +399,56 @@ export default function LandingPage() {
           <NeuralBackground />
           <div className="absolute inset-0 bg-gradient-to-b from-[#020d0a] via-[#041a10] to-[#020d0a]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_70%_at_50%_50%,rgba(52,211,153,0.07),transparent)]" />
-
-          <div className="relative z-10 px-6 py-14 flex flex-col items-center text-center gap-6">
-            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/5 backdrop-blur-sm">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-emerald-400/80 text-[11px] font-semibold uppercase tracking-[0.2em]">{t('bannerOfficial')}</span>
-            </div>
-
-            <div className="space-y-3 max-w-2xl">
-              <p className="text-white/40 text-base sm:text-lg font-light tracking-wide">{t('bannerTagline')}</p>
-              <p className="text-white text-4xl sm:text-6xl font-black tracking-tight leading-none drop-shadow-[0_0_30px_rgba(52,211,153,0.3)]">{t('bannerTitle')}</p>
-              <p className="text-emerald-400 text-xl sm:text-3xl font-bold tracking-wide">{t('bannerSubtitle')}</p>
-            </div>
-
-            <div className="flex items-center gap-3 w-52">
-              <div className="flex-1 h-px bg-emerald-500/20" />
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <div className="flex-1 h-px bg-emerald-500/20" />
-            </div>
-
-            {user ? (
-              <Link href="/dashboard" className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(52,211,153,0.35)] hover:shadow-[0_0_45px_rgba(52,211,153,0.5)] hover:-translate-y-0.5">
-                {t('dashboard')} <ArrowRight className="w-4 h-4" />
-              </Link>
-            ) : (
-              <Link href="/login" className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(52,211,153,0.35)] hover:shadow-[0_0_45px_rgba(52,211,153,0.5)] hover:-translate-y-0.5">
-                {t('bannerCTA')} <ArrowRight className="w-4 h-4" />
-              </Link>
-            )}
-
-            <div className="flex flex-wrap items-center justify-center gap-6 pt-1">
-              {['AI-Powered', 'ETB Native', 'Bank-Grade Security', 'Free to Start'].map(tag => (
-                <div key={tag} className="flex items-center gap-1.5 text-white/30 text-[11px] font-semibold uppercase tracking-widest">
-                  <Check className="w-3 h-3 text-emerald-500" /> {tag}
+          <div className="relative z-10 max-w-7xl mx-auto px-6 py-14">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+              {/* Left — video */}
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/30 via-accent/20 to-emerald-500/30 rounded-3xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-700" />
+                <div className="relative rounded-3xl overflow-hidden border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
+                  <video src="/wallet1.mp4" autoPlay muted loop playsInline className="w-full h-auto block" style={{ maxHeight: '480px', objectFit: 'cover' }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#020d0a]/40 via-transparent to-transparent pointer-events-none" />
                 </div>
-              ))}
+                <div className="absolute -bottom-4 -right-4 bg-card/90 backdrop-blur-md border border-emerald-500/30 rounded-2xl px-4 py-3 shadow-xl">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-xs font-bold text-emerald-400">Ethiopian Birr</span>
+                  </div>
+                  <p className="text-sm font-black text-white mt-0.5">ስሙኒ ዋሌት</p>
+                </div>
+              </div>
+              {/* Right — content */}
+              <div className="flex flex-col items-start gap-6">
+                <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/5 backdrop-blur-sm">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-emerald-400/80 text-[11px] font-semibold uppercase tracking-[0.2em]">{t('bannerOfficial')}</span>
+                </div>
+                <div className="space-y-3">
+                  <p className="text-white/40 text-base sm:text-lg font-light tracking-wide">{t('bannerTagline')}</p>
+                  <p className="text-white text-4xl sm:text-5xl font-black tracking-tight leading-none drop-shadow-[0_0_30px_rgba(52,211,153,0.3)]">{t('bannerTitle')}</p>
+                  <p className="text-emerald-400 text-xl sm:text-2xl font-bold tracking-wide">{t('bannerSubtitle')}</p>
+                </div>
+                <div className="flex items-center gap-3 w-52">
+                  <div className="flex-1 h-px bg-emerald-500/20" />
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  <div className="flex-1 h-px bg-emerald-500/20" />
+                </div>
+                {user ? (
+                  <Link href="/dashboard" className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(52,211,153,0.35)] hover:shadow-[0_0_45px_rgba(52,211,153,0.5)] hover:-translate-y-0.5">
+                    {t('dashboard')} <ArrowRight className="w-4 h-4" />
+                  </Link>
+                ) : (
+                  <Link href="/login" className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(52,211,153,0.35)] hover:shadow-[0_0_45px_rgba(52,211,153,0.5)] hover:-translate-y-0.5">
+                    {t('bannerCTA')} <ArrowRight className="w-4 h-4" />
+                  </Link>
+                )}
+                <div className="flex flex-wrap gap-4">
+                  {['AI-Powered', 'ETB Native', 'Bank-Grade Security', 'Free to Start'].map(tag => (
+                    <div key={tag} className="flex items-center gap-1.5 text-white/50 text-[11px] font-semibold uppercase tracking-widest">
+                      <Check className="w-3 h-3 text-emerald-500" /> {tag}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

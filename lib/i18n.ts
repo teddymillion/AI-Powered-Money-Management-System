@@ -364,7 +364,7 @@ const translations = {
     enterValidAmount:'ትክክለኛ መጠን ያስገቡ።',
 
     // AI Insight card
-    aiInsights:          'AI ምክሮች',
+    aiInsights:          'የAI ምክሮች',
     generatingInsights:  'ከውሂብዎ እየተዘጋጀ ነው...',
     noAiInsights:        'እስካሁን AI ምክር የለም',
     addTransactionsAi:   'ግብይቶችን ጨምሩ እና ግላዊ AI ምክሮችን ያግኙ።',
@@ -414,7 +414,7 @@ const translations = {
     needs:                'ፍላጎቶች',
     wants:                'ምኞቶች',
     savings:              'ቁጠባ',
-    needsDesc:            'ቤት ኪራይ፣ ውሃ ብርሃን፣ ምግብ፣ ትራንስፖርት',
+    needsDesc:            'ቤት ኪራይ፣ ውሃ መብራት፣ ምግብ፣ ትራንስፖርት',
     wantsDesc:            'መዝናኛ፣ ምግብ ቤት፣ ግዢ',
     savingsDesc:          'የድንገተኛ ጊዜ ፈንድ፣ ግቦች፣ ኢንቨስትመንት',
     proTip:               'ምክር — 50/30/20 ህግ',
@@ -583,7 +583,7 @@ const translations = {
 
     // Banner Section
     bannerOfficial:       'ስሙኒ ዋሌት · ኦፊሻል',
-    bannerTagline:        'ባዶነት ወጪን ካለማወቅ ይጀምራል፤',
+    bannerTagline:        'ድህነት ወጪን ካለማወቅ ይጀምራል፤',
     bannerTitle:          'ስሙኒ ዋሌት',
     bannerSubtitle:       'ዘመናዊው የወጪዎ መሪ!',
     bannerCTA:            'ይጀምሩ — ነፃ ነው',
@@ -595,7 +595,7 @@ const translations = {
     ourMission:           'ተልእኮቻችን',
     ourMissionText:       'የፋይናንስ ግልጽነት መብት መሆን የለበትም። በኢትዮጵያ ውስጥ ብዙ ሰዎች ገንዘባቸውን ያለ መሳሪያዎች ወይም በራስ የመተማመን ውሳኔዎችን ለማድረግ ግንዛቤዎች ያስተዳድራሉ። ስሙኒ ዋሌት ይህንን ለመቀየር ነው የሚኖረው — በሁሉም ሰው ኪስ ውስጥ ብልህ፣ አውድ-ግንዛቤ ያለው የፋይናንስ ረዳት በማስቀመጥ፣ ሙሉ በሙሉ ነፃ።',
     whatWeBuilt:          'ያገነባነው',
-    aiInsightsTitle:      'AI ምክሮች',
+    aiInsightsTitle:      'የAI ምክሮች',
     aiInsightsDesc:       'Llama 3.3 ግብይቶችዎን ይተነትናል እና ግላዊ ምክሮችን በቅጽበት ያቀርባል።',
     etbNativeTitle:       'ETB ተወላጅ',
     etbNativeDesc:        'እያንዳንዱ አሁን በኢትዮጵያ ብር ነው። ምንም ልወጣ የለም፣ ምንም መመሳታት የለም — ለአካባቢያዊ አውድ የተገነባ።',
