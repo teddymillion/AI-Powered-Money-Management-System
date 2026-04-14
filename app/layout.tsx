@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
 import { LanguageProvider } from '@/lib/language-context'
+import { AIFloatingButton } from '@/components/ai-floating-button'
 import './globals.css'
 
 const _geist = Geist({ subsets: ['latin'] });
@@ -33,6 +34,7 @@ export default function RootLayout({
         <AuthProvider>
           <LanguageProvider>
             {children}
+            <AIFloatingButton />
           </LanguageProvider>
         </AuthProvider>
         <Analytics />
