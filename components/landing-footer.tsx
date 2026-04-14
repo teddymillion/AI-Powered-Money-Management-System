@@ -3,9 +3,19 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLang } from '@/lib/language-context';
+import { useAuth } from '@/lib/auth-context';
+
+const PRODUCT_LINKS = [
+  { key: 'dashboard',     href: '/dashboard'  },
+  { key: 'aiAssistant',   href: '/assistant'  },
+  { key: 'analytics',     href: '/analytics'  },
+  { key: 'budget',        href: '/budget'     },
+  { key: 'notifications', href: '/dashboard'  },
+];
 
 export function LandingFooter() {
   const { t } = useLang();
+  const { user } = useAuth();
 
   return (
     <footer className="relative border-t border-border overflow-hidden">
@@ -40,8 +50,14 @@ export function LandingFooter() {
           <div className="space-y-4">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t('product')}</p>
             <div className="space-y-2.5">
-              {[t('dashboard'), t('aiAssistant'), t('analytics'), t('budget'), t('notifications')].map(item => (
-                <Link key={item} href="/login" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">{item}</Link>
+              {PRODUCT_LINKS.map(({ key, href }) => (
+                <Link
+                  key={key}
+                  href={user ? href : '/login'}
+                  className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {t(key as any)}
+                </Link>
               ))}
             </div>
           </div>

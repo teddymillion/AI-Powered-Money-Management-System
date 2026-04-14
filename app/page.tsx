@@ -11,7 +11,8 @@ import { LandingHero } from '@/components/landing-hero';
 import { LandingFeatures } from '@/components/landing-features';
 import { LandingFooter } from '@/components/landing-footer';
 import { useLang } from '@/lib/language-context';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-context';
+
 
 function NeuralBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -405,7 +406,7 @@ export default function LandingPage() {
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/30 via-accent/20 to-emerald-500/30 rounded-3xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-700" />
                 <div className="relative rounded-3xl overflow-hidden border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
-                  <video src="/wallet1.mp4" autoPlay muted loop playsInline className="w-full h-auto block" style={{ maxHeight: '480px', objectFit: 'cover' }} />
+                  <video src="/simuni wallet.mp4" autoPlay muted loop playsInline className="w-full h-auto block" style={{ maxHeight: '480px', objectFit: 'cover' }} />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#020d0a]/40 via-transparent to-transparent pointer-events-none" />
                 </div>
                 <div className="absolute -bottom-4 -right-4 bg-card/90 backdrop-blur-md border border-emerald-500/30 rounded-2xl px-4 py-3 shadow-xl">
