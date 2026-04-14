@@ -4,7 +4,7 @@ const translations = {
   en: {
     // Nav
     dashboard:        'Dashboard',
-    aiAssistant:      'AI Assistant',
+    aiAssistant:      'ስሙኒ AI Assistant',
     budget:           'Budget',
     analytics:        'Analytics',
     profile:          'Profile',
@@ -132,7 +132,7 @@ const translations = {
     goalNameRequired:     'Name and a valid target amount are required.',
 
     // AI Assistant
-    aiAssistantTitle:     'AI Assistant',
+    aiAssistantTitle:     'ስሙኒ AI Assistant',
     aiAssistantSubtitle:  'Powered by Groq — analysing your real financial data',
     aiWelcome:            "Hello! I'm your AI financial assistant powered by Llama 3.3 on Groq. I have access to your real transaction data and can give personalised advice. What would you like to know?",
     suggestedQuestions:   'Suggested questions:',

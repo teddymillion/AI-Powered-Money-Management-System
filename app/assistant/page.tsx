@@ -59,6 +59,8 @@ function AssistantInner() {
   const PROMPTS = [t('prompt1'), t('prompt2'), t('prompt3'), t('prompt4')];
   const hasInsight = !!searchParams.get('insight');
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
+  const API_BASE  = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const avatarSrc = user?.avatar ? `${API_BASE}${user.avatar}` : null;
 
   return (
     <DashboardLayout>
@@ -82,9 +84,20 @@ function AssistantInner() {
           <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-bold ${msg.role === 'user' ? 'bg-accent text-accent-foreground' : 'bg-accent/15 text-accent'}`}>
-                  {msg.role === 'user' ? initials : <Sparkles className="w-3.5 h-3.5" />}
-                </div>
+                {/* Avatar */}
+                {msg.role === 'user' ? (
+                  <div className="w-8 h-8 rounded-xl overflow-hidden flex-shrink-0 bg-accent flex items-center justify-center text-xs font-bold text-accent-foreground">
+                    {avatarSrc
+                      ? <img src={avatarSrc} alt="avatar" className="w-full h-full object-cover" />
+                      : initials
+                    }
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-xl overflow-hidden flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/simuniai.png" alt="ስሙኒ AI" className="w-full h-full object-contain" />
+                  </div>
+                )}
                 <div className={`max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                   msg.role === 'user' ? 'bg-accent text-accent-foreground rounded-tr-sm'
                   : msg.isError ? 'bg-destructive/10 text-destructive border border-destructive/20 rounded-tl-sm'
@@ -96,8 +109,9 @@ function AssistantInner() {
             ))}
             {loading && (
               <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-xl bg-accent/15 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-3.5 h-3.5 text-accent animate-pulse" />
+                <div className="w-8 h-8 rounded-xl overflow-hidden flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/simuniai.png" alt="ስሙኒ AI" className="w-full h-full object-contain" />
                 </div>
                 <div className="bg-secondary border border-border px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1">
                   {[0,150,300].map(d => (
