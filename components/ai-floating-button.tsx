@@ -34,6 +34,14 @@ export function AIFloatingButton() {
           }}
         />
       </button>
+
+      {/* Label */}
+      <p
+        className="fixed bottom-1 right-0 z-[9999] w-24 text-center text-[9px] font-bold text-emerald-400 pointer-events-none"
+        style={{ textShadow: '0 0 8px rgba(52,211,153,0.9)' }}
+      >
+        ስሙኒ AI Assistant
+      </p>
     </>
   );
 }
