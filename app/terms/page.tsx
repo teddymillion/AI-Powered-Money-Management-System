@@ -45,7 +45,7 @@ const SECTIONS_EN = [
   },
   {
     title: '10. Contact',
-    body: `If you have any questions about these Terms of Service, please contact us at tedrosmilion19@gmail.com or reach out via Telegram at @Lataxv72.`,
+    body: `If you have any questions about these Terms of Service, please contact us at tedrosmilion19@gmail.com or reach out via Telegram at @Lataxv7.`,
   },
 ];
 
@@ -88,7 +88,7 @@ const SECTIONS_AM = [
   },
   {
     title: '10. ያግኙን',
-    body: `ስለእነዚህ የአገልግሎት ውሎች ማንኛውም ጥያቄ ካለዎ፣ እባክዎ በ tedrosmilion19@gmail.com ያግኙን ወይም በቴሌግራም @Lataxv72 ያግኙን።`,
+    body: `ስለእነዚህ የአገልግሎት ውሎች ማንኛውም ጥያቄ ካለዎ፣ እባክዎ በ tedrosmilion19@gmail.com ያግኙን ወይም በቴሌግራም @Lataxv7 ያግኙን።`,
   },
 ];
 
@@ -140,7 +140,7 @@ export default function TermsPage() {
           <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} ስሙኒ ዋሌት. {t('footerRights')}</p>
           <div className="flex gap-4 text-xs">
             <a href="mailto:tedrosmilion19@gmail.com" className="text-muted-foreground hover:text-foreground transition-colors">tedrosmilion19@gmail.com</a>
-            <a href="https://t.me/Lataxv72" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">@Lataxv72</a>
+            <a href="https://t.me/Lataxv7" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">@Lataxv7</a>
           </div>
         </div>
       </div>
