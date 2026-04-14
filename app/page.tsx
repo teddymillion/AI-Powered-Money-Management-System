@@ -11,7 +11,7 @@ import { LandingHero } from '@/components/landing-hero';
 import { LandingFeatures } from '@/components/landing-features';
 import { LandingFooter } from '@/components/landing-footer';
 import { useLang } from '@/lib/language-context';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-context';
 
 function NeuralBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);

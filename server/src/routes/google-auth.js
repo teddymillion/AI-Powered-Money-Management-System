@@ -55,24 +55,30 @@ router.get('/', passport.authenticate('google', {
 
 // Step 2 — Google redirects back here
 router.get('/callback',
-  passport.authenticate('google', { session: false, failureRedirect: `${process.env.CLIENT_ORIGIN}/login?error=google_failed` }),
-  (req, res) => {
-    const user = req.user;
-    const token = jwt.sign(
-      { sub: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+  (req, res, next) => {
+    passport.authenticate('google', { session: false }, (err, user) => {
+      if (err || !user) {
+        console.error('Google OAuth error:', err?.message || 'No user returned');
+        return res.redirect(`${process.env.CLIENT_ORIGIN || 'http://localhost:3000'}/login?error=google_failed`);
+      }
 
-    const userData = encodeURIComponent(JSON.stringify({
-      id:     user._id,
-      name:   user.name,
-      email:  user.email,
-      avatar: user.avatar,
-    }));
+      const token = jwt.sign(
+        { sub: user._id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
 
-    // Redirect to frontend with token + user in query params
-    res.redirect(`${process.env.CLIENT_ORIGIN}/login?token=${token}&user=${userData}`);
+      const userData = encodeURIComponent(JSON.stringify({
+        id:     user._id,
+        name:   user.name,
+        email:  user.email,
+        avatar: user.avatar,
+      }));
+
+      const redirectUrl = `${process.env.CLIENT_ORIGIN || 'http://localhost:3000'}/login?token=${token}&user=${userData}`;
+      console.log('Google OAuth success, redirecting to:', redirectUrl.substring(0, 60) + '...');
+      return res.redirect(redirectUrl);
+    })(req, res, next);
   }
 );
 
