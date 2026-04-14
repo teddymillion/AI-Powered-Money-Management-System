@@ -414,7 +414,7 @@ export default function LandingPage() {
                     <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span className="text-xs font-bold text-emerald-400">Ethiopian Birr</span>
                   </div>
-                  <p className="text-sm font-black text-white mt-0.5">ስሙኒ ዋሌት</p>
+                  <p className="text-sm font-black text-gray mt-0.5">ስሙኒ ዋሌት</p>
                 </div>
               </div>
               {/* Right — content */}
